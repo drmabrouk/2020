@@ -3,6 +3,7 @@
 class SM_Finance {
 
     public static function calculate_member_dues($member_id) {
+        global $wpdb;
         $member = SM_DB::get_member_by_id($member_id);
         if (!$member) return array('total_owed' => 0, 'total_paid' => 0, 'balance' => 0, 'breakdown' => []);
 
