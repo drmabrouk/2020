@@ -364,19 +364,6 @@ class SM_Activator {
             UNIQUE KEY shortcode (shortcode)
         ) $charset_collate;\n";
 
-        // Articles Table
-        $table_name = $wpdb->prefix . 'sm_articles';
-        $sql .= "CREATE TABLE $table_name (
-            id mediumint(9) NOT NULL AUTO_INCREMENT,
-            title varchar(255) NOT NULL,
-            content longtext NOT NULL,
-            image_url text,
-            author_id bigint(20),
-            status enum('publish', 'draft') DEFAULT 'publish',
-            created_at datetime DEFAULT CURRENT_TIMESTAMP,
-            PRIMARY KEY  (id)
-        ) $charset_collate;\n";
-
         // Alerts Table
         $table_name = $wpdb->prefix . 'sm_alerts';
         $sql .= "CREATE TABLE $table_name (
@@ -707,25 +694,10 @@ class SM_Activator {
                 'title' => 'لوحة الإدارة النقابية',
                 'content' => '[sm_admin]'
             ),
-            'home' => array(
-                'title' => 'الرئيسية',
-                'content' => '[smhome]',
-                'shortcode' => 'smhome'
-            ),
-            'about-us' => array(
-                'title' => 'عن النقابة',
-                'content' => '[smabout]',
-                'shortcode' => 'smabout'
-            ),
             'contact-us' => array(
                 'title' => 'اتصل بنا',
                 'content' => '[smcontact]',
                 'shortcode' => 'smcontact'
-            ),
-            'articles' => array(
-                'title' => 'أخبار ومقالات',
-                'content' => '[smblog]',
-                'shortcode' => 'smblog'
             ),
             'services' => array(
                 'title' => 'الخدمات الرقمية',

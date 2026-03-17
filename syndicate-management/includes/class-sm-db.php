@@ -1128,29 +1128,6 @@ class SM_DB {
         ], ['id' => intval($id)]);
     }
 
-    // Article Management Methods
-    public static function add_article($data) {
-        global $wpdb;
-        return $wpdb->insert("{$wpdb->prefix}sm_articles", [
-            'title' => sanitize_text_field($data['title']),
-            'content' => wp_kses_post($data['content']),
-            'image_url' => esc_url_raw($data['image_url'] ?? ''),
-            'author_id' => get_current_user_id(),
-            'status' => $data['status'] ?? 'publish',
-            'created_at' => current_time('mysql')
-        ]);
-    }
-
-    public static function get_articles($limit = 10) {
-        global $wpdb;
-        return $wpdb->get_results($wpdb->prepare("SELECT * FROM {$wpdb->prefix}sm_articles WHERE status = 'publish' ORDER BY created_at DESC LIMIT %d", $limit));
-    }
-
-    public static function delete_article($id) {
-        global $wpdb;
-        return $wpdb->delete("{$wpdb->prefix}sm_articles", ['id' => intval($id)]);
-    }
-
     // Membership Request Multi-Stage Methods
     public static function add_membership_request($data) {
         global $wpdb;

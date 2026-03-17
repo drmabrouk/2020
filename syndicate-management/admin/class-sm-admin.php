@@ -199,6 +199,18 @@ class SM_Admin {
         if (isset($_POST['sm_save_academic_options'])) {
             check_admin_referer('sm_admin_action', 'sm_admin_nonce');
 
+            if (isset($_POST['professional_grades'])) {
+                $grades_raw = explode("\n", str_replace("\r", "", $_POST['professional_grades']));
+                $grades = array();
+                foreach ($grades_raw as $line) {
+                    $parts = explode("|", $line);
+                    if (count($parts) == 2) {
+                        $grades[trim($parts[0])] = trim($parts[1]);
+                    }
+                }
+                if (!empty($grades)) SM_Settings::save_professional_grades($grades);
+            }
+
             $fields = [
                 'universities' => 'save_universities',
                 'faculties' => 'save_faculties',

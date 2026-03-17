@@ -124,10 +124,7 @@ class SM_Public {
         add_shortcode('verify', array($this, 'shortcode_verify'));
 
         // Page Customization Shortcodes
-        add_shortcode('smhome', array($this, 'shortcode_home'));
-        add_shortcode('smabout', array($this, 'shortcode_about'));
         add_shortcode('smcontact', array($this, 'shortcode_contact'));
-        add_shortcode('smblog', array($this, 'shortcode_blog'));
         add_shortcode('services', array($this, 'shortcode_services'));
 
         add_filter('authenticate', array($this, 'custom_authenticate'), 20, 3);
@@ -220,59 +217,6 @@ class SM_Public {
         return ob_get_clean();
     }
 
-    public function shortcode_home() {
-        $syndicate = SM_Settings::get_syndicate_info();
-        $page = SM_DB::get_page_by_shortcode('smhome');
-        ob_start();
-        ?>
-        <div class="sm-public-page sm-home-page" dir="rtl">
-            <div class="sm-hero-section">
-                <?php if ($syndicate['syndicate_logo']): ?>
-                    <img src="<?php echo esc_url($syndicate['syndicate_logo']); ?>" alt="Logo" class="sm-hero-logo">
-                <?php endif; ?>
-                <h1><?php echo esc_html($syndicate['syndicate_name']); ?></h1>
-                <p class="sm-hero-subtitle"><?php echo esc_html($page->instructions ?? 'مرحباً بكم في البوابة الرسمية'); ?></p>
-            </div>
-            <div class="sm-content-container">
-                <div class="sm-info-grid">
-                    <div class="sm-info-card">
-                        <span class="dashicons dashicons-admin-site"></span>
-                        <h4>من نحن</h4>
-                        <p>نعمل على تقديم أفضل الخدمات لأعضاء النقابة وتطوير المنظومة المهنية.</p>
-                    </div>
-                    <div class="sm-info-card">
-                        <span class="dashicons dashicons-awards"></span>
-                        <h4>أهدافنا</h4>
-                        <p>الارتقاء بالمستوى المهني والاجتماعي لكافة الأعضاء المسجلين.</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <?php
-        return ob_get_clean();
-    }
-
-    public function shortcode_about() {
-        $syndicate = SM_Settings::get_syndicate_info();
-        $page = SM_DB::get_page_by_shortcode('smabout');
-        ob_start();
-        ?>
-        <div class="sm-public-page sm-about-page" dir="rtl">
-            <div class="sm-page-header">
-                <h2><?php echo esc_html($page->title ?? 'عن النقابة'); ?></h2>
-            </div>
-            <div class="sm-content-container">
-                <div class="sm-about-content">
-                    <h3><?php echo esc_html($syndicate['syndicate_name']); ?></h3>
-                    <div class="sm-text-block">
-                        <?php echo nl2br(esc_html($syndicate['extra_details'] ?: 'تفاصيل النقابة الرسمية والرؤية المستقبلية للمهنة.')); ?>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <?php
-        return ob_get_clean();
-    }
 
     public function shortcode_contact() {
         $syndicate = SM_Settings::get_syndicate_info();
@@ -306,40 +250,6 @@ class SM_Public {
         return ob_get_clean();
     }
 
-    public function shortcode_blog() {
-        $articles = SM_DB::get_articles(12);
-        $page = SM_DB::get_page_by_shortcode('smblog');
-        ob_start();
-        ?>
-        <div class="sm-public-page sm-blog-page" dir="rtl">
-            <div class="sm-page-header">
-                <h2><?php echo esc_html($page->title ?? 'أخبار ومقالات'); ?></h2>
-            </div>
-            <div class="sm-content-container">
-                <?php if (empty($articles)): ?>
-                    <p style="text-align:center; padding:50px; color:#718096;">لا توجد مقالات منشورة حالياً.</p>
-                <?php else: ?>
-                    <div class="sm-blog-grid">
-                        <?php foreach($articles as $a): ?>
-                            <div class="sm-blog-card">
-                                <?php if($a->image_url): ?>
-                                    <div class="sm-blog-image" style="background-image: url('<?php echo esc_url($a->image_url); ?>');"></div>
-                                <?php endif; ?>
-                                <div class="sm-blog-content">
-                                    <span class="sm-blog-date"><?php echo date('Y-m-d', strtotime($a->created_at)); ?></span>
-                                    <h4><?php echo esc_html($a->title); ?></h4>
-                                    <p><?php echo mb_strimwidth(strip_tags($a->content), 0, 120, '...'); ?></p>
-                                    <a href="#" class="sm-read-more">اقرأ المزيد ←</a>
-                                </div>
-                            </div>
-                        <?php endforeach; ?>
-                    </div>
-                <?php endif; ?>
-            </div>
-        </div>
-        <?php
-        return ob_get_clean();
-    }
 
     public function shortcode_login() {
         if (is_user_logged_in()) {
@@ -1421,7 +1331,8 @@ class SM_Public {
     }
 
     public function ajax_verify_document() {
-        $val = sanitize_text_field($_POST['search_value'] ?? '');
+        global $wpdb;
+        $val = trim(sanitize_text_field($_POST['search_value'] ?? ''));
         $type = sanitize_text_field($_POST['search_type'] ?? 'all');
 
         if (empty($val)) wp_send_json_error('يرجى إدخال قيمة للبحث');
@@ -1429,10 +1340,41 @@ class SM_Public {
         $member = null;
         $results = [];
 
-        switch ($type) {
-            case 'membership':
-                $member = SM_DB::get_member_by_membership_number($val);
-                if ($member) {
+        if ($type === 'all') {
+            $member = $wpdb->get_row($wpdb->prepare(
+                "SELECT * FROM {$wpdb->prefix}sm_members
+                 WHERE national_id = %s
+                 OR membership_number = %s
+                 OR license_number = %s
+                 OR facility_number = %s
+                 LIMIT 1",
+                $val, $val, $val, $val
+            ));
+
+            if (!$member) {
+                $user = get_user_by('login', $val);
+                if ($user) {
+                    $member = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}sm_members WHERE wp_user_id = %d", $user->ID));
+                }
+            }
+        } else {
+            switch ($type) {
+                case 'membership':
+                    $member = SM_DB::get_member_by_membership_number($val);
+                    break;
+                case 'license':
+                    $member = SM_DB::get_member_by_facility_number($val);
+                    break;
+                case 'practice':
+                    $member = SM_DB::get_member_by_license_number($val);
+                    break;
+            }
+        }
+
+        if ($member) {
+            // Membership results
+            if ($type === 'all' || $type === 'membership') {
+                if ($member->membership_number) {
                     $results['membership'] = [
                         'label' => 'بيانات العضوية',
                         'name' => $member->name,
@@ -1443,10 +1385,11 @@ class SM_Public {
                         'grade' => $member->professional_grade
                     ];
                 }
-                break;
-            case 'license':
-                $member = SM_DB::get_member_by_facility_number($val);
-                if ($member) {
+            }
+
+            // License results
+            if ($type === 'all' || $type === 'license') {
+                if ($member->facility_number) {
                     $results['license'] = [
                         'label' => 'رخصة المنشأة',
                         'facility_name' => $member->facility_name,
@@ -1456,10 +1399,11 @@ class SM_Public {
                         'address' => $member->facility_address
                     ];
                 }
-                break;
-            case 'practice':
-                $member = SM_DB::get_member_by_license_number($val);
-                if ($member) {
+            }
+
+            // Practice results
+            if ($type === 'all' || $type === 'practice') {
+                if ($member->license_number) {
                     $results['practice'] = [
                         'label' => 'تصريح مزاولة المهنة',
                         'name' => $member->name,
@@ -1468,45 +1412,7 @@ class SM_Public {
                         'expiry' => $member->license_expiration_date
                     ];
                 }
-                break;
-            default: // 'all' - National ID or Username
-                if (preg_match('/^[0-9]{14}$/', $val)) {
-                    $member = SM_DB::get_member_by_national_id($val);
-                } else {
-                    $member = SM_DB::get_member_by_username($val);
-                }
-
-                if ($member) {
-                    $results['membership'] = [
-                        'label' => 'بيانات العضوية',
-                        'name' => $member->name,
-                        'number' => $member->membership_number,
-                        'status' => $member->membership_status,
-                        'expiry' => $member->membership_expiration_date,
-                        'specialization' => $member->specialization,
-                        'grade' => $member->professional_grade
-                    ];
-                    if ($member->facility_number) {
-                        $results['license'] = [
-                            'label' => 'رخصة المنشأة',
-                            'facility_name' => $member->facility_name,
-                            'number' => $member->facility_number,
-                            'category' => $member->facility_category,
-                            'expiry' => $member->facility_license_expiration_date,
-                            'address' => $member->facility_address
-                        ];
-                    }
-                    if ($member->license_number) {
-                        $results['practice'] = [
-                            'label' => 'تصريح مزاولة المهنة',
-                            'name' => $member->name,
-                            'number' => $member->license_number,
-                            'issue_date' => $member->license_issue_date,
-                            'expiry' => $member->license_expiration_date
-                        ];
-                    }
-                }
-                break;
+            }
         }
 
         if (empty($results)) {
@@ -2403,28 +2309,6 @@ class SM_Public {
         else wp_send_json_error('Failed to update page');
     }
 
-    public function ajax_add_article() {
-        if (!current_user_can('sm_manage_system')) wp_send_json_error('Unauthorized');
-        check_ajax_referer('sm_admin_action', 'nonce');
-
-        $data = [
-            'title' => sanitize_text_field($_POST['title']),
-            'content' => wp_kses_post($_POST['content']),
-            'image_url' => esc_url_raw($_POST['image_url'] ?? ''),
-            'status' => 'publish'
-        ];
-
-        if (SM_DB::add_article($data)) wp_send_json_success();
-        else wp_send_json_error('Failed to add article');
-    }
-
-    public function ajax_delete_article() {
-        if (!current_user_can('sm_manage_system')) wp_send_json_error('Unauthorized');
-        check_ajax_referer('sm_admin_action', 'nonce');
-
-        if (SM_DB::delete_article(intval($_POST['id']))) wp_send_json_success();
-        else wp_send_json_error('Failed to delete article');
-    }
 
     public function ajax_save_alert() {
         if (!current_user_can('sm_manage_system')) wp_send_json_error('Unauthorized');
