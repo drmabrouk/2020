@@ -133,7 +133,53 @@ class Syndicate_Management {
     public function run() {
         add_action('plugins_loaded', array($this, 'check_version_updates'));
         $this->loader->add_action('init', $this, 'schedule_maintenance_cron');
+
+        // Error handling
+        set_error_handler(array($this, 'handle_errors'));
+        register_shutdown_function(array($this, 'handle_fatal_errors'));
+
         $this->loader->run();
+    }
+
+    public function handle_errors($errno, $errstr, $errfile, $errline) {
+        if (!(error_reporting() & $errno)) return false;
+
+        // Only report significant errors
+        if (in_array($errno, [E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR, E_USER_ERROR])) {
+            $this->send_error_report("Error [$errno]: $errstr", $errfile, $errline);
+        }
+        return false;
+    }
+
+    public function handle_fatal_errors() {
+        $error = error_get_last();
+        if ($error !== NULL && in_array($error['type'], [E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR])) {
+            $this->send_error_report("Fatal Error: " . $error['message'], $error['file'], $error['line']);
+        }
+    }
+
+    private static $is_reporting = false;
+
+    private function send_error_report($message, $file, $line) {
+        if (self::$is_reporting) return;
+        self::$is_reporting = true;
+
+        try {
+            $support_email = get_option('sm_support_email', 'support@irseg.org');
+            $subject = "Syndicate Management - Technical Error Report";
+            $body = "A technical error has occurred in the Syndicate Management plugin.\n\n";
+            $body .= "Message: $message\n";
+            $body .= "File: $file\n";
+            $body .= "Line: $line\n";
+            $body .= "URL: " . (isset($_SERVER['REQUEST_URI']) ? home_url($_SERVER['REQUEST_URI']) : 'N/A') . "\n";
+            $body .= "Time: " . current_time('mysql') . "\n";
+
+            if (function_exists('wp_mail')) {
+                wp_mail($support_email, $subject, $body);
+            }
+        } catch (Exception $e) {}
+
+        self::$is_reporting = false;
     }
 
     public function schedule_maintenance_cron() {

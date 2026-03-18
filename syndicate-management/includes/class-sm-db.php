@@ -4,26 +4,26 @@ class SM_DB {
 
     public static function get_staff($args = array()) {
         $user = wp_get_current_user();
-        $is_syndicate_admin = in_array('sm_syndicate_admin', (array)$user->roles);
+        $is_officer = in_array('sm_syndicate_admin', (array)$user->roles) || in_array('sm_syndicate_member', (array)$user->roles);
+        $has_full_access = current_user_can('sm_full_access') || current_user_can('manage_options');
         $my_gov = get_user_meta($user->ID, 'sm_governorate', true);
 
         $default_args = array(
-            'role__in' => array('administrator', 'sm_system_admin', 'sm_syndicate_admin', 'sm_syndicate_member'),
             'number' => 20,
-            'offset' => 0
+            'offset' => 0,
+            'orderby' => 'display_name',
+            'order' => 'ASC'
         );
 
-        if ($is_syndicate_admin) {
-            $default_args['role'] = 'sm_syndicate_member'; // Can only see members
-            if ($my_gov) {
-                $default_args['meta_query'] = array(
-                    array(
-                        'key' => 'sm_governorate',
-                        'value' => $my_gov,
-                        'compare' => '='
-                    )
-                );
-            }
+        // If not a full admin, restricted to branch
+        if ($is_officer && !$has_full_access && $my_gov) {
+            $default_args['meta_query'] = array(
+                array(
+                    'key' => 'sm_governorate',
+                    'value' => $my_gov,
+                    'compare' => '='
+                )
+            );
         }
 
         $args = wp_parse_args($args, $default_args);
@@ -204,6 +204,7 @@ class SM_DB {
             'phone' => sanitize_text_field($data['phone'] ?? ''),
             'alt_phone' => sanitize_text_field($data['alt_phone'] ?? ''),
             'notes' => sanitize_textarea_field($data['notes'] ?? ''),
+            'province_of_birth' => sanitize_text_field($data['province_of_birth'] ?? ''),
             'wp_user_id' => $wp_user_id,
             'registration_date' => current_time('Y-m-d'),
             'sort_order' => self::get_next_sort_order()
@@ -233,7 +234,7 @@ class SM_DB {
             'license_issue_date', 'license_expiration_date', 'facility_number',
             'facility_name', 'facility_license_issue_date', 'facility_license_expiration_date',
             'facility_address', 'sub_syndicate', 'facility_category', 'last_paid_membership_year',
-            'last_paid_license_year', 'email', 'phone', 'alt_phone', 'notes'
+            'last_paid_license_year', 'email', 'phone', 'alt_phone', 'notes', 'province_of_birth'
         ];
 
         foreach ($fields as $f) {

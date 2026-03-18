@@ -234,11 +234,11 @@
                     <div class="sm-form-group">
                         <label class="sm-label">تغيير الدور:</label>
                         <select name="role" id="edit_off_role" class="sm-select">
-                            <?php if ($is_sys_manager): ?>
-                                <option value="sm_system_admin">مدير النظام</option>
-                                <option value="sm_syndicate_admin">مسؤول نقابة</option>
-                            <?php endif; ?>
-                            <option value="sm_syndicate_member">عضو نقابة</option>
+                            <?php
+                            global $wp_roles;
+                            foreach($wp_roles->roles as $role_key => $role_data): ?>
+                                <option value="<?php echo esc_attr($role_key); ?>"><?php echo esc_html(translate_user_role($role_data['name'])); ?></option>
+                            <?php endforeach; ?>
                         </select>
                     </div>
                     <div class="sm-form-group">
@@ -285,11 +285,11 @@
                     <div class="sm-form-group">
                         <label class="sm-label">اختيار الدور:</label>
                         <select name="role" class="sm-select">
-                            <?php if ($is_sys_manager): ?>
-                                <option value="sm_system_admin">مدير النظام</option>
-                                <option value="sm_syndicate_admin">مسؤول نقابة</option>
-                            <?php endif; ?>
-                            <option value="sm_syndicate_member">عضو نقابة</option>
+                            <?php
+                            global $wp_roles;
+                            foreach($wp_roles->roles as $role_key => $role_data): ?>
+                                <option value="<?php echo esc_attr($role_key); ?>" <?php selected($role_key, 'sm_syndicate_member'); ?>><?php echo esc_html(translate_user_role($role_data['name'])); ?></option>
+                            <?php endforeach; ?>
                         </select>
                     </div>
                     <div class="sm-form-group">
