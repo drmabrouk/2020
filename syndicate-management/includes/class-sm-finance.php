@@ -16,7 +16,13 @@ class SM_Finance {
 
         // 1. Membership Dues
         // Registration date determines the first year
-        $start_year = $member->membership_start_date ? (int)date('Y', strtotime($member->membership_start_date)) : $current_year;
+        $parsed_start = $member->membership_start_date ? strtotime($member->membership_start_date) : false;
+        $start_year = ($parsed_start !== false && $parsed_start > 0) ? (int)date('Y', $parsed_start) : $current_year;
+
+        // Sane limits for years - Registration year shouldn't be earlier than 1980 or later than now
+        if ($start_year < 1980) $start_year = $current_year;
+        if ($start_year > $current_year) $start_year = $current_year;
+
         $last_paid_year = (int)$member->last_paid_membership_year;
 
         // If it's a new member (never paid), they owe registration fee for the start year
@@ -60,13 +66,17 @@ class SM_Finance {
                 $penalty_start_date = date('Y-m-d', strtotime($expiry . ' +1 year'));
 
                 if ($current_date >= $penalty_start_date) {
-                    $d1 = new DateTime($expiry);
-                    $d2 = new DateTime($current_date);
-                    $diff = $d1->diff($d2);
-                    $years_delayed = $diff->y;
+                    try {
+                        $d1 = new DateTime($expiry);
+                        $d2 = new DateTime($current_date);
+                        $diff = $d1->diff($d2);
+                        $years_delayed = $diff->y;
 
-                    if ($years_delayed >= 1) {
-                        $penalty = $years_delayed * (float)$settings['license_penalty'];
+                        if ($years_delayed >= 1) {
+                            $penalty = $years_delayed * (float)$settings['license_penalty'];
+                        }
+                    } catch (Exception $e) {
+                        // Invalid date, skip penalty
                     }
                 }
 
@@ -247,39 +257,57 @@ class SM_Finance {
     public static function get_financial_stats() {
         global $wpdb;
         $user = wp_get_current_user();
-        $is_syndicate_admin = in_array('sm_syndicate_admin', (array)$user->roles);
+        $is_officer = in_array('sm_syndicate_admin', (array)$user->roles) || in_array('sm_syndicate_member', (array)$user->roles);
+        $has_full_access = current_user_can('sm_full_access') || current_user_can('manage_options');
         $my_gov = get_user_meta($user->ID, 'sm_governorate', true);
 
-        $args = array('limit' => -1);
-        $members = SM_DB::get_members($args);
+        $where_member = "1=1";
+        if ($is_officer && !$has_full_access && $my_gov) {
+            $where_member = $wpdb->prepare("governorate = %s", $my_gov);
+        }
+
+        $join_pay = "";
+        $where_pay = "1=1";
+        if ($is_officer && !$has_full_access && $my_gov) {
+            $join_pay = "JOIN {$wpdb->prefix}sm_members m ON p.member_id = m.id";
+            $where_pay = $wpdb->prepare("m.governorate = %s", $my_gov);
+        }
+
+        // Optimization: Use SQL for direct totals
+        $total_paid = $wpdb->get_var("SELECT SUM(p.amount) FROM {$wpdb->prefix}sm_payments p $join_pay WHERE $where_pay") ?: 0;
+
+        // Limiting iteration for complex dues calculation to avoid timeouts on large databases
+        // Ideally, this should be cached or pre-calculated in a summary table.
+        $members = $wpdb->get_results("SELECT id FROM {$wpdb->prefix}sm_members WHERE $where_member LIMIT 250");
 
         $total_owed = 0;
-        $total_paid = 0;
-        $total_penalty = 0;
+        $total_penalty_calc = 0;
 
-        foreach ($members as $member) {
-            $dues = self::calculate_member_dues($member->id);
+        foreach ($members as $m) {
+            $dues = self::calculate_member_dues($m->id);
             $total_owed += $dues['total_owed'];
-            $total_paid += $dues['total_paid'];
-
             foreach ($dues['breakdown'] as $item) {
-                $total_penalty += $item['penalty'];
+                if (!empty($item['penalty'])) $total_penalty_calc += $item['penalty'];
             }
         }
 
         return [
-            'total_owed' => $total_owed,
-            'total_paid' => $total_paid,
-            'total_balance' => $total_owed - $total_paid,
-            'total_penalty' => $total_penalty
+            'total_owed' => (float)$total_owed,
+            'total_paid' => (float)$total_paid,
+            'total_balance' => max(0, (float)$total_owed - (float)$total_paid),
+            'total_penalty' => (float)$total_penalty_calc
         ];
     }
 
     public static function get_top_delayed_members($limit = 10) {
-        $members = SM_DB::get_members(['limit' => -1]);
-        $delayed = [];
+        global $wpdb;
         $current_year = (int)date('Y');
 
+        // Optimize: Only fetch members who haven't paid for the current year
+        $query = "SELECT * FROM {$wpdb->prefix}sm_members WHERE last_paid_membership_year < %d LIMIT 200";
+        $members = $wpdb->get_results($wpdb->prepare($query, $current_year));
+
+        $delayed = [];
         foreach ($members as $m) {
             $dues = self::calculate_member_dues($m->id);
             if ($dues['balance'] > 0) {
