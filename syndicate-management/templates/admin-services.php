@@ -10,7 +10,8 @@ $member_by_wp = $wpdb->get_row($wpdb->prepare("SELECT id FROM {$wpdb->prefix}sm_
 if ($member_by_wp) $member_id = $member_by_wp->id;
 
 // Fetch services
-$services = SM_DB::get_services(['status' => $is_official ? 'any' : 'active']);
+$services = SM_DB::get_services(['status' => $is_official ? 'any' : 'active', 'is_deleted' => 0]);
+$deleted_services = $is_official ? SM_DB::get_services(['is_deleted' => 1]) : [];
 $my_requests = $member_id ? SM_DB::get_service_requests(['member_id' => $member_id]) : [];
 $all_requests = $is_official ? SM_DB::get_service_requests() : [];
 ?>
@@ -43,7 +44,7 @@ $all_requests = $is_official ? SM_DB::get_service_requests() : [];
                     <div class="sm-service-card" style="background: #fff; border: 1px solid var(--sm-border-color); border-radius: 15px; padding: 25px; display: flex; flex-direction: column; transition: 0.3s; box-shadow: 0 4px 6px rgba(0,0,0,0.02); opacity: <?php echo $is_active ? '1' : '0.7'; ?>;">
                         <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px;">
                             <div style="width: 50px; height: 50px; background: <?php echo $is_active ? 'var(--sm-primary-color)' : '#94a3b8'; ?>; border-radius: 12px; display: flex; align-items: center; justify-content: center; color: #fff;">
-                                <span class="dashicons dashicons-cloud" style="font-size: 24px; width: 24px; height: 24px;"></span>
+                                <span class="dashicons <?php echo esc_attr($s->icon ?: 'dashicons-cloud'); ?>" style="font-size: 24px; width: 24px; height: 24px;"></span>
                             </div>
                             <?php if ($is_official): ?>
                                 <span class="sm-badge <?php echo $is_active ? 'sm-badge-high' : 'sm-badge-low'; ?>" style="font-size: 10px;">
@@ -82,36 +83,31 @@ $all_requests = $is_official ? SM_DB::get_service_requests() : [];
     </div>
 
     <!-- TAB: Deleted Services (Trash) -->
-    <?php if ($is_official):
-        global $wpdb;
-        $deleted_logs = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}sm_logs WHERE action = 'حذف خدمة رقمية' ORDER BY created_at DESC LIMIT 20");
-    ?>
+    <?php if ($is_official): ?>
     <div id="deleted-services" class="sm-internal-tab" style="display: none;">
         <div class="sm-table-container">
             <table class="sm-table">
                 <thead>
                     <tr>
                         <th>الخدمة</th>
-                        <th>تاريخ الحذف</th>
-                        <th>بواسطة</th>
+                        <th>التصنيف</th>
+                        <th>الرسوم</th>
                         <th>إجراءات</th>
                     </tr>
                 </thead>
                 <tbody>
-                    <?php if (empty($deleted_logs)): ?>
-                        <tr><td colspan="4" style="text-align: center; padding: 40px;">لا توجد خدمات محذوفة مؤخراً.</td></tr>
-                    <?php else: foreach ($deleted_logs as $log):
-                        $details = json_decode(str_replace('ROLLBACK_DATA:', '', $log->details), true);
-                        if (!$details || !isset($details['data'])) continue;
-                        $s_data = $details['data'];
-                        $user_info = get_userdata($log->user_id);
-                    ?>
+                    <?php if (empty($deleted_services)): ?>
+                        <tr><td colspan="4" style="text-align: center; padding: 40px;">لا توجد خدمات محذوفة حالياً.</td></tr>
+                    <?php else: foreach ($deleted_services as $ds): ?>
                         <tr>
-                            <td><strong><?php echo esc_html($s_data['name']); ?></strong></td>
-                            <td><?php echo $log->created_at; ?></td>
-                            <td><?php echo $user_info ? $user_info->display_name : 'نظام'; ?></td>
+                            <td><strong><?php echo esc_html($ds->name); ?></strong></td>
+                            <td><?php echo esc_html($ds->category); ?></td>
+                            <td><?php echo number_format($ds->fees, 2); ?> ج.م</td>
                             <td>
-                                <button onclick="smRollbackLog(<?php echo $log->id; ?>)" class="sm-btn" style="width: auto; padding: 5px 15px; background: #38a169;">استعادة</button>
+                                <div style="display: flex; gap: 5px;">
+                                    <button onclick="restoreService(<?php echo $ds->id; ?>)" class="sm-btn" style="width: auto; padding: 5px 15px; background: #38a169;">استعادة</button>
+                                    <button onclick="deleteServicePermanent(<?php echo $ds->id; ?>)" class="sm-btn" style="width: auto; padding: 5px 15px; background: #e53e3e;">حذف نهائي</button>
+                                </div>
                             </td>
                         </tr>
                     <?php endforeach; endif; ?>
@@ -185,7 +181,10 @@ $all_requests = $is_official ? SM_DB::get_service_requests() : [];
         <div class="sm-modal-header"><h3>إضافة خدمة رقمية جديدة</h3><button class="sm-modal-close" onclick="document.getElementById('add-service-modal').style.display='none'">&times;</button></div>
         <form id="add-service-form" style="padding: 20px;">
             <div class="sm-form-group"><label class="sm-label">اسم الخدمة:</label><input name="name" type="text" class="sm-input" required></div>
-            <div class="sm-form-group"><label class="sm-label">تصنيف الخدمة:</label><input name="category" type="text" class="sm-input" placeholder="مثال: تراخيص، شهادات، إلخ"></div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                <div class="sm-form-group"><label class="sm-label">تصنيف الخدمة:</label><input name="category" type="text" class="sm-input" placeholder="مثال: تراخيص، شهادات، إلخ"></div>
+                <div class="sm-form-group"><label class="sm-label">كود الأيقونة (Dashicons):</label><input name="icon" type="text" class="sm-input" placeholder="dashicons-cloud" value="dashicons-cloud"></div>
+            </div>
             <div class="sm-form-group"><label class="sm-label">وصف الخدمة:</label><textarea name="description" class="sm-textarea" rows="3"></textarea></div>
             <div class="sm-form-group"><label class="sm-label">الرسوم (0 للمجانية):</label><input name="fees" type="number" step="0.01" class="sm-input" value="0"></div>
 
@@ -354,13 +353,36 @@ $all_requests = $is_official ? SM_DB::get_service_requests() : [];
     };
 
     window.deleteService = function(id) {
-        if (!confirm('هل أنت متأكد من حذف هذه الخدمة؟')) return;
+        if (!confirm('هل أنت متأكد من نقل هذه الخدمة إلى سلة المحذوفات؟')) return;
         const fd = new FormData();
         fd.append('action', 'sm_delete_service');
         fd.append('id', id);
         fd.append('nonce', '<?php echo wp_create_nonce("sm_admin_action"); ?>');
         fetch(ajaxurl, {method: 'POST', body: fd}).then(r=>r.json()).then(res=>{
-            if (res.success) smRefreshServicesList();
+            if (res.success) location.reload();
+        });
+    };
+
+    window.restoreService = function(id) {
+        if (!confirm('هل أنت متأكد من استعادة هذه الخدمة؟')) return;
+        const fd = new FormData();
+        fd.append('action', 'sm_restore_service');
+        fd.append('id', id);
+        fd.append('nonce', '<?php echo wp_create_nonce("sm_admin_action"); ?>');
+        fetch(ajaxurl, {method: 'POST', body: fd}).then(r=>r.json()).then(res=>{
+            if (res.success) location.reload();
+        });
+    };
+
+    window.deleteServicePermanent = function(id) {
+        if (!confirm('تحذير: سيتم حذف الخدمة نهائياً من قاعدة البيانات. هل أنت متأكد؟')) return;
+        const fd = new FormData();
+        fd.append('action', 'sm_delete_service');
+        fd.append('id', id);
+        fd.append('permanent', 1);
+        fd.append('nonce', '<?php echo wp_create_nonce("sm_admin_action"); ?>');
+        fetch(ajaxurl, {method: 'POST', body: fd}).then(r=>r.json()).then(res=>{
+            if (res.success) location.reload();
         });
     };
 
@@ -369,6 +391,7 @@ $all_requests = $is_official ? SM_DB::get_service_requests() : [];
         modal.find('h3').text('تعديل الخدمة: ' + s.name);
         modal.find('[name="name"]').val(s.name);
         modal.find('[name="category"]').val(s.category);
+        modal.find('[name="icon"]').val(s.icon || 'dashicons-cloud');
         modal.find('[name="description"]').val(s.description);
         modal.find('[name="fees"]').val(s.fees);
         modal.find('[name="status"]').val(s.status);

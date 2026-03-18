@@ -718,11 +718,31 @@ class SM_DB {
 
     public static function get_services($args = array()) {
         global $wpdb;
-        $status = $args['status'] ?? 'active';
-        if ($status === 'any' || $status === 'all') {
-            return $wpdb->get_results("SELECT * FROM {$wpdb->prefix}sm_services ORDER BY created_at DESC");
+        $where = "1=1";
+        $params = [];
+
+        if (isset($args['is_deleted'])) {
+            $where .= " AND is_deleted = %d";
+            $params[] = (int)$args['is_deleted'];
+        } else {
+            $where .= " AND is_deleted = 0";
         }
-        return $wpdb->get_results($wpdb->prepare("SELECT * FROM {$wpdb->prefix}sm_services WHERE status = %s ORDER BY created_at DESC", $status));
+
+        if (!empty($args['status']) && $args['status'] !== 'any' && $args['status'] !== 'all') {
+            $where .= " AND status = %s";
+            $params[] = sanitize_text_field($args['status']);
+        }
+
+        if (!empty($args['category'])) {
+            $where .= " AND category = %s";
+            $params[] = sanitize_text_field($args['category']);
+        }
+
+        $query = "SELECT * FROM {$wpdb->prefix}sm_services WHERE $where ORDER BY created_at DESC";
+        if (!empty($params)) {
+            return $wpdb->get_results($wpdb->prepare($query, $params));
+        }
+        return $wpdb->get_results($query);
     }
 
     public static function add_service($data) {
@@ -730,6 +750,7 @@ class SM_DB {
         return $wpdb->insert("{$wpdb->prefix}sm_services", array(
             'name' => sanitize_text_field($data['name']),
             'category' => sanitize_text_field($data['category'] ?? 'عام'),
+            'icon' => sanitize_text_field($data['icon'] ?? 'dashicons-cloud'),
             'requires_login' => isset($data['requires_login']) ? (int)$data['requires_login'] : 1,
             'description' => sanitize_textarea_field($data['description']),
             'fees' => floatval($data['fees']),
@@ -745,6 +766,7 @@ class SM_DB {
         $update_data = [];
         if (isset($data['name'])) $update_data['name'] = sanitize_text_field($data['name']);
         if (isset($data['category'])) $update_data['category'] = sanitize_text_field($data['category']);
+        if (isset($data['icon'])) $update_data['icon'] = sanitize_text_field($data['icon']);
         if (isset($data['requires_login'])) $update_data['requires_login'] = (int)$data['requires_login'];
         if (isset($data['description'])) $update_data['description'] = sanitize_textarea_field($data['description']);
         if (isset($data['fees'])) $update_data['fees'] = floatval($data['fees']);
@@ -755,13 +777,22 @@ class SM_DB {
         return $wpdb->update("{$wpdb->prefix}sm_services", $update_data, array('id' => intval($id)));
     }
 
-    public static function delete_service($id) {
+    public static function delete_service($id, $permanent = false) {
         global $wpdb;
-        $service = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}sm_services WHERE id = %d", $id));
-        if ($service) {
-             SM_Logger::log('حذف خدمة رقمية (مع إمكانية الاستعادة)', 'ROLLBACK_DATA:' . json_encode(['table' => 'services', 'data' => (array)$service]));
+        if ($permanent) {
+            $service = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}sm_services WHERE id = %d", $id));
+            if ($service) {
+                 SM_Logger::log('حذف خدمة رقمية نهائياً', 'ROLLBACK_DATA:' . json_encode(['table' => 'services', 'data' => (array)$service]));
+            }
+            return $wpdb->delete("{$wpdb->prefix}sm_services", array('id' => $id));
+        } else {
+            return $wpdb->update("{$wpdb->prefix}sm_services", array('is_deleted' => 1), array('id' => intval($id)));
         }
-        return $wpdb->delete("{$wpdb->prefix}sm_services", array('id' => $id));
+    }
+
+    public static function restore_service($id) {
+        global $wpdb;
+        return $wpdb->update("{$wpdb->prefix}sm_services", array('is_deleted' => 0), array('id' => intval($id)));
     }
 
     public static function submit_service_request($data) {
@@ -796,7 +827,7 @@ class SM_DB {
         $query = "SELECT r.*, s.name as service_name, m.name as member_name, m.governorate
                   FROM {$wpdb->prefix}sm_service_requests r
                   JOIN {$wpdb->prefix}sm_services s ON r.service_id = s.id
-                  JOIN {$wpdb->prefix}sm_members m ON r.member_id = m.id
+                  LEFT JOIN {$wpdb->prefix}sm_members m ON r.member_id = m.id
                   WHERE $where
                   ORDER BY r.created_at DESC";
 
