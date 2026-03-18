@@ -8,9 +8,10 @@ class SM_Activator {
         $installed_ver = get_option('sm_db_version');
 
         // Migration: Rename old tables if they exist
-        if (version_compare($installed_ver, '97.2.0', '<')) {
+        if (version_compare($installed_ver, '97.2.1', '<')) {
             self::migrate_tables();
             self::migrate_settings();
+            self::fix_services_schema();
         }
 
         $sql = "";
@@ -759,6 +760,15 @@ class SM_Activator {
                 }
                 $wpdb->update("{$wpdb->prefix}sm_members", ['wp_user_id' => $user_id], ['id' => $m->id]);
             }
+        }
+    }
+
+    private static function fix_services_schema() {
+        global $wpdb;
+        $table_name = $wpdb->prefix . 'sm_services';
+        $column = $wpdb->get_results($wpdb->prepare("SHOW COLUMNS FROM $table_name LIKE %s", 'category'));
+        if (empty($column)) {
+            $wpdb->query("ALTER TABLE $table_name ADD category varchar(100) DEFAULT 'عام' AFTER name");
         }
     }
 

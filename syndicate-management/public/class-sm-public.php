@@ -1385,9 +1385,15 @@ class SM_Public {
             'selected_profile_fields' => stripslashes($_POST['selected_profile_fields'] ?? '[]')
         ];
 
+        error_log('Attempting to add digital service: ' . print_r($data, true));
         $res = SM_DB::add_service($data);
-        if ($res) wp_send_json_success();
-        else wp_send_json_error('Failed to add service');
+        if ($res) {
+            wp_send_json_success();
+        } else {
+            global $wpdb;
+            error_log('Failed to add service. DB Error: ' . $wpdb->last_error);
+            wp_send_json_error('Failed to add service: ' . $wpdb->last_error);
+        }
     }
 
     public function ajax_update_service() {
@@ -1412,8 +1418,13 @@ class SM_Public {
         if (isset($_POST['required_fields'])) $data['required_fields'] = stripslashes($_POST['required_fields']);
         if (isset($_POST['selected_profile_fields'])) $data['selected_profile_fields'] = stripslashes($_POST['selected_profile_fields']);
 
-        if (SM_DB::update_service($id, $data)) wp_send_json_success();
-        else wp_send_json_error('Failed to update service');
+        $res = SM_DB::update_service($id, $data);
+        if ($res !== false) {
+            wp_send_json_success();
+        } else {
+            global $wpdb;
+            wp_send_json_error('Failed to update service: ' . $wpdb->last_error);
+        }
     }
 
     public function ajax_get_services_html() {
