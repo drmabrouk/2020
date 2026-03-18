@@ -730,6 +730,7 @@ class SM_DB {
         return $wpdb->insert("{$wpdb->prefix}sm_services", array(
             'name' => sanitize_text_field($data['name']),
             'category' => sanitize_text_field($data['category'] ?? 'عام'),
+            'requires_login' => isset($data['requires_login']) ? (int)$data['requires_login'] : 1,
             'description' => sanitize_textarea_field($data['description']),
             'fees' => floatval($data['fees']),
             'required_fields' => $data['required_fields'] ?? '[]',
@@ -744,6 +745,7 @@ class SM_DB {
         $update_data = [];
         if (isset($data['name'])) $update_data['name'] = sanitize_text_field($data['name']);
         if (isset($data['category'])) $update_data['category'] = sanitize_text_field($data['category']);
+        if (isset($data['requires_login'])) $update_data['requires_login'] = (int)$data['requires_login'];
         if (isset($data['description'])) $update_data['description'] = sanitize_textarea_field($data['description']);
         if (isset($data['fees'])) $update_data['fees'] = floatval($data['fees']);
         if (isset($data['status'])) $update_data['status'] = sanitize_text_field($data['status']);
@@ -764,7 +766,7 @@ class SM_DB {
 
     public static function submit_service_request($data) {
         global $wpdb;
-        return $wpdb->insert("{$wpdb->prefix}sm_service_requests", array(
+        $res = $wpdb->insert("{$wpdb->prefix}sm_service_requests", array(
             'service_id' => intval($data['service_id']),
             'member_id' => intval($data['member_id']),
             'request_data' => $data['request_data'], // JSON string
@@ -773,6 +775,7 @@ class SM_DB {
             'created_at' => current_time('mysql'),
             'updated_at' => current_time('mysql')
         ));
+        return $res ? $wpdb->insert_id : false;
     }
 
     public static function get_service_requests($args = array()) {

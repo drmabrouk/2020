@@ -8,7 +8,7 @@ class SM_Activator {
         $installed_ver = get_option('sm_db_version');
 
         // Migration: Rename old tables if they exist
-        if (version_compare($installed_ver, '97.2.1', '<')) {
+        if (version_compare($installed_ver, '97.2.2', '<')) {
             self::migrate_tables();
             self::migrate_settings();
             self::fix_services_schema();
@@ -166,6 +166,7 @@ class SM_Activator {
             id mediumint(9) NOT NULL AUTO_INCREMENT,
             name tinytext NOT NULL,
             category varchar(100) DEFAULT 'عام',
+            requires_login tinyint(1) DEFAULT 1,
             description text,
             fees decimal(10,2) DEFAULT 0,
             required_fields text,
@@ -766,9 +767,15 @@ class SM_Activator {
     private static function fix_services_schema() {
         global $wpdb;
         $table_name = $wpdb->prefix . 'sm_services';
-        $column = $wpdb->get_results($wpdb->prepare("SHOW COLUMNS FROM $table_name LIKE %s", 'category'));
-        if (empty($column)) {
+
+        $cat_col = $wpdb->get_results($wpdb->prepare("SHOW COLUMNS FROM $table_name LIKE %s", 'category'));
+        if (empty($cat_col)) {
             $wpdb->query("ALTER TABLE $table_name ADD category varchar(100) DEFAULT 'عام' AFTER name");
+        }
+
+        $login_col = $wpdb->get_results($wpdb->prepare("SHOW COLUMNS FROM $table_name LIKE %s", 'requires_login'));
+        if (empty($login_col)) {
+            $wpdb->query("ALTER TABLE $table_name ADD requires_login tinyint(1) DEFAULT 1 AFTER category");
         }
     }
 

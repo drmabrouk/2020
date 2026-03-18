@@ -188,9 +188,19 @@ class SM_Public {
         ob_start();
         ?>
         <div class="sm-public-page" dir="rtl">
-            <div class="sm-page-header">
-                <h2>بوابة الخدمات الرقمية</h2>
-                <p>اختر الخدمة المطلوبة من القائمة أدناه للبدء في تنفيذ طلبك إلكترونياً</p>
+            <!-- Order Tracking Header -->
+            <div class="sm-tracking-search-box" style="background: linear-gradient(135deg, var(--sm-dark-color), #2d3748); border-radius: 24px; padding: 40px; margin-bottom: 50px; color: #fff; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);">
+                <div style="text-align: center; margin-bottom: 30px;">
+                    <h2 style="margin: 0; font-weight: 900; font-size: 2em; letter-spacing: -1px;">متابعة حالة الطلبات</h2>
+                    <p style="margin: 10px 0 0 0; opacity: 0.8; font-size: 14px;">أدخل كود التتبع الخاص بطلبك للاستعلام عن حالته الحالية</p>
+                </div>
+                <div style="display: flex; gap: 15px; max-width: 600px; margin: 0 auto;">
+                    <input type="text" id="sm_service_tracking_input" placeholder="أدخل كود الطلب (مثال: SR-12345)"
+                           style="flex: 1; padding: 15px 25px; border-radius: 15px; border: 2px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.05); color: #fff; font-family: 'Rubik', sans-serif; font-size: 16px; outline: none; transition: 0.3s;">
+                    <button onclick="smTrackServiceRequest()"
+                            style="background: var(--sm-primary-color); color: #fff; border: none; padding: 0 35px; border-radius: 15px; font-weight: 800; font-size: 15px; cursor: pointer; transition: 0.3s; font-family: 'Rubik', sans-serif;">بحث وتتبع</button>
+                </div>
+                <div id="sm-tracking-results-area" style="margin-top: 30px; display: none; background: rgba(255,255,255,0.05); border-radius: 18px; padding: 25px; border: 1px solid rgba(255,255,255,0.1); animation: smFadeIn 0.4s ease;"></div>
             </div>
 
             <div class="sm-services-layout" style="display: flex; gap: 30px; margin-top: 40px; align-items: flex-start;">
@@ -245,13 +255,14 @@ class SM_Public {
                                                 <?php echo $s->fees > 0 ? number_format($s->fees, 2) . ' <span style="font-size: 0.6em;">ج.م</span>' : 'خدمة مجانية'; ?>
                                             </span>
                                         </div>
-                                        <?php if ($is_logged_in): ?>
-                                            <a href="<?php echo add_query_arg('sm_tab', 'digital-services', home_url('/sm-admin')); ?>" class="sm-btn-sleek"
-                                               style="background: var(--sm-dark-color); color: #fff; padding: 12px 25px; border-radius: 15px; text-decoration: none; font-weight: 700; font-size: 14px; transition: 0.3s;">طلب الآن</a>
-                                        <?php else: ?>
-                                            <button onclick="window.location.href='<?php echo $login_url; ?>'" class="sm-btn-sleek"
-                                                    style="background: #f1f5f9; color: #475569; padding: 12px 25px; border: none; border-radius: 15px; font-weight: 700; font-size: 14px; cursor: pointer; transition: 0.3s;">دخول للطلب</button>
-                                        <?php endif; ?>
+                                        <?php
+                                        $btn_onclick = $s->requires_login ? "smHandleLoginService(this)" : "smOpenProgressiveForm(this, ".json_encode($s).")";
+                                        $btn_label = $s->requires_login ? "دخول للأعضاء" : "تقديم طلب";
+                                        ?>
+                                        <button onclick='<?php echo $btn_onclick; ?>' class="sm-btn-sleek sm-service-trigger"
+                                                style="background: var(--sm-dark-color); color: #fff; padding: 12px 25px; border: none; border-radius: 15px; font-weight: 700; font-size: 14px; cursor: pointer; transition: 0.3s;">
+                                            <?php echo $btn_label; ?>
+                                        </button>
                                     </div>
                                 </div>
                             <?php endforeach; ?>
@@ -261,12 +272,26 @@ class SM_Public {
             </div>
         </div>
 
+        <!-- Service Access Dropdown / Modal System -->
+        <div id="sm-service-dropdown-container" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); backdrop-filter:blur(5px); z-index:100000; justify-content:center; align-items:center; padding:20px;">
+            <div id="sm-service-dropdown-content" style="background:#fff; width:100%; max-width:550px; border-radius:24px; padding:40px; position:relative; box-shadow:0 25px 50px -12px rgba(0,0,0,0.5);">
+                <button onclick="document.getElementById('sm-service-dropdown-container').style.display='none'" style="position:absolute; top:20px; left:20px; border:none; background:none; font-size:24px; cursor:pointer; color:#94a3b8;">&times;</button>
+                <div id="sm-dropdown-body"></div>
+            </div>
+        </div>
+
         <style>
             .sm-category-btn:hover { background: #f8fafc; color: var(--sm-primary-color); }
             .sm-category-btn.active { background: var(--sm-primary-color); color: #fff !important; box-shadow: 0 4px 6px -1px rgba(246, 48, 73, 0.2); }
 
             .sm-service-card-modern:hover { transform: translateY(-8px); box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04); border-color: var(--sm-primary-color); }
             .sm-btn-sleek:hover { opacity: 0.9; transform: scale(1.05); }
+
+            .sm-tracking-label { font-size: 11px; opacity: 0.7; display: block; margin-bottom: 2px; }
+            .sm-tracking-value { font-weight: 700; font-size: 15px; }
+
+            .sm-form-step { display: none; }
+            .sm-form-step.active { display: block; animation: smFadeIn 0.4s ease; }
 
             @media (max-width: 992px) {
                 .sm-services-layout { flex-direction: column; }
@@ -278,6 +303,116 @@ class SM_Public {
         </style>
 
         <script>
+            window.smTrackServiceRequest = function() {
+                const code = document.getElementById('sm_service_tracking_input').value;
+                const area = document.getElementById('sm-tracking-results-area');
+                if(!code) return alert('يرجى إدخال كود التتبع');
+
+                const fd = new FormData();
+                fd.append('action', 'sm_track_service_request');
+                fd.append('tracking_code', code);
+
+                fetch('<?php echo admin_url('admin-ajax.php'); ?>', {method:'POST', body:fd}).then(r=>r.json()).then(res=>{
+                    area.style.display = 'block';
+                    if(res.success) {
+                        const r = res.data;
+                        area.innerHTML = `
+                            <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:20px;">
+                                <div><span class="sm-tracking-label" style="color:rgba(255,255,255,0.6);">الخدمة:</span><span class="sm-tracking-value">${r.service}</span></div>
+                                <div><span class="sm-tracking-label" style="color:rgba(255,255,255,0.6);">تاريخ الطلب:</span><span class="sm-tracking-value">${r.date}</span></div>
+                                <div><span class="sm-tracking-label" style="color:rgba(255,255,255,0.6);">حالة الطلب:</span><span style="color:#f6ad55; font-weight:800;">${r.status}</span></div>
+                                <div style="grid-column: span 3; border-top: 1px solid rgba(255,255,255,0.1); padding-top:15px;">
+                                    <span class="sm-tracking-label" style="color:rgba(255,255,255,0.6);">صاحب الطلب:</span><span class="sm-tracking-value">${r.member}</span>
+                                </div>
+                            </div>
+                        `;
+                    } else {
+                        area.innerHTML = `<div style="text-align:center; color:#feb2b2;">${res.data}</div>`;
+                    }
+                });
+            };
+
+            window.smHandleLoginService = function() {
+                const container = document.getElementById('sm-service-dropdown-container');
+                const body = document.getElementById('sm-dropdown-body');
+                container.style.display = 'flex';
+                body.innerHTML = `
+                    <div style="text-align:center;">
+                        <div style="font-size:50px; margin-bottom:20px;">🔒</div>
+                        <h3 style="font-weight:900; font-size:1.8em; margin:0 0 10px 0;">هذه الخدمة للأعضاء فقط</h3>
+                        <p style="color:#64748b; line-height:1.6; margin-bottom:30px;">يرجى تسجيل الدخول إلى حسابك الشخصي في المنصة للاستفادة من هذه الخدمة ورفع وثائقك.</p>
+                        <a href="<?php echo $login_url; ?>" class="sm-btn" style="width:100%; height:50px; font-weight:800; text-decoration:none; display:flex; align-items:center; justify-content:center;">التوجه لصفحة تسجيل الدخول</a>
+                    </div>
+                `;
+            };
+
+            window.smOpenProgressiveForm = function(btn, s) {
+                const container = document.getElementById('sm-service-dropdown-container');
+                const body = document.getElementById('sm-dropdown-body');
+                container.style.display = 'flex';
+
+                let reqFields = [];
+                try { reqFields = JSON.parse(s.required_fields); } catch(e){}
+
+                let html = `
+                    <div style="margin-bottom:30px;"><h3 style="margin:0; font-weight:900; color:var(--sm-dark-color);">طلب خدمة: ${s.name}</h3><p style="margin:5px 0 0 0; color:#64748b; font-size:13px;">يرجى استكمال البيانات المطلوبة لتقديم طلبك بنجاح</p></div>
+                    <form id="sm-public-service-form">
+                        <input type="hidden" name="service_id" value="${s.id}">
+                        <div class="sm-form-step active" id="step-1">
+                            <div class="sm-form-group"><label class="sm-label">الاسم الكامل:</label><input name="cust_name" class="sm-input" required></div>
+                            <div class="sm-form-group"><label class="sm-label">رقم الهاتف:</label><input name="cust_phone" class="sm-input" required></div>
+                            <button type="button" onclick="smMoveStep(2)" class="sm-btn" style="width:100%; margin-top:10px;">التالي</button>
+                        </div>
+                        <div class="sm-form-step" id="step-2">
+                            ${reqFields.map(f => `<div class="sm-form-group"><label class="sm-label">${f.label}:</label><input name="field_${f.name}" type="${f.type||'text'}" class="sm-input" required></div>`).join('')}
+                            <div style="display:flex; gap:10px; margin-top:10px;">
+                                <button type="button" onclick="smMoveStep(1)" class="sm-btn sm-btn-outline">السابق</button>
+                                <button type="submit" class="sm-btn" style="flex:1;">تأكيد وتقديم الطلب</button>
+                            </div>
+                        </div>
+                    </form>
+                `;
+                body.innerHTML = html;
+
+                document.getElementById('sm-public-service-form').onsubmit = function(e) {
+                    e.preventDefault();
+                    const formData = new FormData(this);
+                    const data = {};
+                    formData.forEach((value, key) => {
+                        if(key.startsWith('field_')) data[key.replace('field_', '')] = value;
+                    });
+
+                    const fd = new FormData();
+                    fd.append('action', 'sm_submit_service_request');
+                    fd.append('service_id', formData.get('service_id'));
+                    fd.append('member_id', '0'); // External request
+                    fd.append('request_data', JSON.stringify(data));
+                    fd.append('nonce', '<?php echo wp_create_nonce("sm_service_action"); ?>');
+
+                    const submitBtn = this.querySelector('button[type="submit"]');
+                    submitBtn.disabled = true; submitBtn.innerText = 'جاري المعالجة...';
+
+                    fetch('<?php echo admin_url('admin-ajax.php'); ?>', {method:'POST', body:fd}).then(r=>r.json()).then(res=>{
+                        if(res.success) {
+                            body.innerHTML = `
+                                <div style="text-align:center;">
+                                    <div style="font-size:60px; margin-bottom:20px;">✅</div>
+                                    <h3 style="font-weight:900; font-size:1.8em; margin:0 0 10px 0;">تم تقديم طلبك بنجاح!</h3>
+                                    <p style="color:#64748b; line-height:1.6; margin-bottom:20px;">يرجى الاحتفاظ بكود التتبع التالي للاستعلام عن حالة طلبك لاحقاً:</p>
+                                    <div style="background:#f8fafc; border:2px dashed var(--sm-primary-color); padding:15px; font-size:24px; font-weight:900; color:var(--sm-primary-color); border-radius:15px; margin-bottom:30px;">SR-${res.data}</div>
+                                    <button onclick="location.reload()" class="sm-btn" style="width:100%;">إغلاق</button>
+                                </div>
+                            `;
+                        } else alert(res.data);
+                    });
+                };
+            };
+
+            window.smMoveStep = function(step) {
+                document.querySelectorAll('.sm-form-step').forEach(s => s.classList.remove('active'));
+                document.getElementById('step-' + step).classList.add('active');
+            };
+
             document.addEventListener('DOMContentLoaded', function() {
                 const categoryButtons = document.querySelectorAll('.sm-category-btn');
                 const serviceCards = document.querySelectorAll('.sm-service-card-modern');
@@ -1378,6 +1513,7 @@ class SM_Public {
         $data = [
             'name' => sanitize_text_field($_POST['name']),
             'category' => sanitize_text_field($_POST['category'] ?? 'عام'),
+            'requires_login' => isset($_POST['requires_login']) ? (int)$_POST['requires_login'] : 1,
             'description' => sanitize_textarea_field($_POST['description']),
             'fees' => floatval($_POST['fees'] ?? 0),
             'status' => in_array($_POST['status'], ['active', 'suspended']) ? $_POST['status'] : 'active',
@@ -1407,6 +1543,7 @@ class SM_Public {
             $data['name'] = sanitize_text_field($_POST['name']);
         }
         if (isset($_POST['category'])) $data['category'] = sanitize_text_field($_POST['category']);
+        if (isset($_POST['requires_login'])) $data['requires_login'] = (int)$_POST['requires_login'];
         if (isset($_POST['description'])) $data['description'] = sanitize_textarea_field($_POST['description']);
         if (isset($_POST['fees'])) {
             if (!is_numeric($_POST['fees'])) wp_send_json_error('الرسوم يجب أن تكون رقماً');
@@ -1547,7 +1684,7 @@ class SM_Public {
         $res = SM_DB::submit_service_request($_POST);
         if ($res) {
             SM_Logger::log('طلب خدمة رقمية', "العضو ID: $member_id طلب خدمة ID: {$_POST['service_id']}");
-            wp_send_json_success();
+            wp_send_json_success($res);
         } else wp_send_json_error('Failed to submit request');
     }
 
@@ -2694,6 +2831,36 @@ class SM_Public {
             'status' => $status_map[$req->status] ?? $req->status,
             'current_stage' => $req->current_stage,
             'rejection_reason' => $req->notes ?? ''
+        ]);
+    }
+
+    public function ajax_track_service_request() {
+        $code = sanitize_text_field($_POST['tracking_code'] ?? '');
+        if (empty($code)) wp_send_json_error('يرجى إدخال كود التتبع');
+
+        $id = str_replace('SR-', '', $code);
+        if (!is_numeric($id)) wp_send_json_error('كود تتبع غير صحيح');
+
+        global $wpdb;
+        $req = $wpdb->get_row($wpdb->prepare(
+            "SELECT r.*, s.name as service_name, m.name as member_name
+             FROM {$wpdb->prefix}sm_service_requests r
+             JOIN {$wpdb->prefix}sm_services s ON r.service_id = s.id
+             LEFT JOIN {$wpdb->prefix}sm_members m ON r.member_id = m.id
+             WHERE r.id = %d",
+            (int)$id
+        ));
+
+        if (!$req) wp_send_json_error('لم يتم العثور على طلب بهذا الكود');
+
+        $status_map = ['pending'=>'قيد الانتظار', 'processing'=>'جاري التنفيذ', 'approved'=>'مكتمل / معتمد', 'rejected'=>'مرفوض'];
+
+        wp_send_json_success([
+            'id' => $req->id,
+            'service' => $req->service_name,
+            'status' => $status_map[$req->status] ?? $req->status,
+            'date' => date('Y-m-d', strtotime($req->created_at)),
+            'member' => $req->member_name ?: 'طلب خارجي'
         ]);
     }
 

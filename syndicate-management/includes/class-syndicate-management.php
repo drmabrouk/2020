@@ -100,6 +100,8 @@ class Syndicate_Management {
         $this->loader->add_action('wp_ajax_nopriv_sm_submit_membership_request', $plugin_public, 'ajax_submit_membership_request');
         $this->loader->add_action('wp_ajax_nopriv_sm_track_membership_request', $plugin_public, 'ajax_track_membership_request');
         $this->loader->add_action('wp_ajax_sm_track_membership_request', $plugin_public, 'ajax_track_membership_request');
+        $this->loader->add_action('wp_ajax_nopriv_sm_track_service_request', $plugin_public, 'ajax_track_service_request');
+        $this->loader->add_action('wp_ajax_sm_track_service_request', $plugin_public, 'ajax_track_service_request');
         $this->loader->add_action('wp_ajax_nopriv_sm_submit_membership_request_stage3', $plugin_public, 'ajax_submit_membership_request_stage3');
         $this->loader->add_action('wp_ajax_sm_submit_membership_request_stage3', $plugin_public, 'ajax_submit_membership_request_stage3');
         $this->loader->add_action('wp_ajax_sm_process_membership_request', $plugin_public, 'ajax_process_membership_request');
