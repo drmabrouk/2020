@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Syndicate Management (إدارة النقابة)
  * Description: نظام شامل لإدارة الأعضاء، التراخيص، والتقارير النقابية والمالية.
- * Version: 97.2.1
+ * Version: 97.2.2
  * Author: AHMED MABROUK
  * Language: ar
  * Text Domain: syndicate-management
@@ -13,7 +13,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-define('SM_VERSION', '97.2.1');
+define('SM_VERSION', '97.2.2');
 define('SM_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('SM_PLUGIN_URL', plugin_dir_url(__FILE__));
 

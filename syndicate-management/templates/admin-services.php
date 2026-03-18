@@ -189,12 +189,21 @@ $all_requests = $is_official ? SM_DB::get_service_requests() : [];
             <div class="sm-form-group"><label class="sm-label">وصف الخدمة:</label><textarea name="description" class="sm-textarea" rows="3"></textarea></div>
             <div class="sm-form-group"><label class="sm-label">الرسوم (0 للمجانية):</label><input name="fees" type="number" step="0.01" class="sm-input" value="0"></div>
 
-            <div class="sm-form-group">
-                <label class="sm-label">حالة الخدمة:</label>
-                <select name="status" class="sm-select">
-                    <option value="active">نشطة (مفعلة)</option>
-                    <option value="suspended">معطلة (موقوفة)</option>
-                </select>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                <div class="sm-form-group">
+                    <label class="sm-label">حالة الخدمة:</label>
+                    <select name="status" class="sm-select">
+                        <option value="active">نشطة (مفعلة)</option>
+                        <option value="suspended">معطلة (موقوفة)</option>
+                    </select>
+                </div>
+                <div class="sm-form-group">
+                    <label class="sm-label">تتطلب تسجيل دخول؟</label>
+                    <select name="requires_login" class="sm-select">
+                        <option value="1">نعم (للأعضاء فقط)</option>
+                        <option value="0">لا (خدمة عامة)</option>
+                    </select>
+                </div>
             </div>
 
             <div class="sm-form-group">
@@ -363,6 +372,7 @@ $all_requests = $is_official ? SM_DB::get_service_requests() : [];
         modal.find('[name="description"]').val(s.description);
         modal.find('[name="fees"]').val(s.fees);
         modal.find('[name="status"]').val(s.status);
+        modal.find('[name="requires_login"]').val(s.requires_login);
 
         $('#fields-list').empty();
         if (s.required_fields) {
