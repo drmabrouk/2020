@@ -8,10 +8,9 @@ class SM_Activator {
         $installed_ver = get_option('sm_db_version');
 
         // Migration: Rename old tables if they exist
-        if (version_compare($installed_ver, '97.2.3', '<')) {
+        if (version_compare($installed_ver, SM_VERSION, '<')) {
             self::migrate_tables();
             self::migrate_settings();
-            self::fix_services_schema();
         }
 
         $sql = "";
@@ -400,7 +399,9 @@ class SM_Activator {
         dbDelta($sql);
 
         update_option('sm_db_version', SM_VERSION);
+        update_option('sm_plugin_version', SM_VERSION);
 
+        self::fix_services_schema();
         self::setup_roles();
         self::seed_notification_templates();
         self::seed_publishing_templates();
@@ -733,6 +734,10 @@ class SM_Activator {
     private static function fix_services_schema() {
         global $wpdb;
         $table_name = $wpdb->prefix . 'sm_services';
+
+        if ($wpdb->get_var("SHOW TABLES LIKE '$table_name'") != $table_name) {
+            return;
+        }
 
         $cat_col = $wpdb->get_results($wpdb->prepare("SHOW COLUMNS FROM $table_name LIKE %s", 'category'));
         if (empty($cat_col)) {

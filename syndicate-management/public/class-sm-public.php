@@ -2441,6 +2441,8 @@ class SM_Public {
         }
 
         $user = get_userdata($member->wp_user_id);
+        if (!$user) wp_send_json_error('بيانات الحساب غير موجودة');
+
         $otp = sprintf("%06d", mt_rand(1, 999999));
 
         update_user_meta($user->ID, 'sm_recovery_otp', $otp);

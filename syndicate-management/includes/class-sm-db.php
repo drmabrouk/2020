@@ -435,8 +435,10 @@ class SM_DB {
                  ORDER BY created_at DESC LIMIT 1",
                 $user_id, $oid, $oid, $user_id
             ));
+            $u = get_userdata($oid);
+            if (!$u) continue;
             $conversations[] = [
-                'user' => get_userdata($oid),
+                'user' => $u,
                 'last_message' => $last_msg
             ];
         }
