@@ -164,6 +164,7 @@ class SM_Activator {
         $sql .= "CREATE TABLE $table_name (
             id mediumint(9) NOT NULL AUTO_INCREMENT,
             name tinytext NOT NULL,
+            category varchar(100) DEFAULT 'عام',
             description text,
             fees decimal(10,2) DEFAULT 0,
             required_fields text,

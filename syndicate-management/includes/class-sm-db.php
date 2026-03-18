@@ -729,6 +729,7 @@ class SM_DB {
         global $wpdb;
         return $wpdb->insert("{$wpdb->prefix}sm_services", array(
             'name' => sanitize_text_field($data['name']),
+            'category' => sanitize_text_field($data['category'] ?? 'عام'),
             'description' => sanitize_textarea_field($data['description']),
             'fees' => floatval($data['fees']),
             'required_fields' => $data['required_fields'] ?? '[]',
@@ -742,6 +743,7 @@ class SM_DB {
         global $wpdb;
         $update_data = [];
         if (isset($data['name'])) $update_data['name'] = sanitize_text_field($data['name']);
+        if (isset($data['category'])) $update_data['category'] = sanitize_text_field($data['category']);
         if (isset($data['description'])) $update_data['description'] = sanitize_textarea_field($data['description']);
         if (isset($data['fees'])) $update_data['fees'] = floatval($data['fees']);
         if (isset($data['status'])) $update_data['status'] = sanitize_text_field($data['status']);

@@ -185,6 +185,7 @@ $all_requests = $is_official ? SM_DB::get_service_requests() : [];
         <div class="sm-modal-header"><h3>إضافة خدمة رقمية جديدة</h3><button class="sm-modal-close" onclick="document.getElementById('add-service-modal').style.display='none'">&times;</button></div>
         <form id="add-service-form" style="padding: 20px;">
             <div class="sm-form-group"><label class="sm-label">اسم الخدمة:</label><input name="name" type="text" class="sm-input" required></div>
+            <div class="sm-form-group"><label class="sm-label">تصنيف الخدمة:</label><input name="category" type="text" class="sm-input" placeholder="مثال: تراخيص، شهادات، إلخ"></div>
             <div class="sm-form-group"><label class="sm-label">وصف الخدمة:</label><textarea name="description" class="sm-textarea" rows="3"></textarea></div>
             <div class="sm-form-group"><label class="sm-label">الرسوم (0 للمجانية):</label><input name="fees" type="number" step="0.01" class="sm-input" value="0"></div>
 
@@ -358,6 +359,7 @@ $all_requests = $is_official ? SM_DB::get_service_requests() : [];
         const modal = $('#add-service-modal');
         modal.find('h3').text('تعديل الخدمة: ' + s.name);
         modal.find('[name="name"]').val(s.name);
+        modal.find('[name="category"]').val(s.category);
         modal.find('[name="description"]').val(s.description);
         modal.find('[name="fees"]').val(s.fees);
         modal.find('[name="status"]').val(s.status);

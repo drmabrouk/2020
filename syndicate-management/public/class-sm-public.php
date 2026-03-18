@@ -179,40 +179,135 @@ class SM_Public {
         $is_logged_in = is_user_logged_in();
         $login_url = home_url('/sm-login');
 
+        $categories = ['الكل'];
+        foreach ($services as $s) {
+            $cat = $s->category ?: 'عام';
+            if (!in_array($cat, $categories)) $categories[] = $cat;
+        }
+
         ob_start();
         ?>
         <div class="sm-public-page" dir="rtl">
             <div class="sm-page-header">
-                <h2>الخدمات الرقمية</h2>
-                <p>مجموعة من الخدمات الإلكترونية المتاحة لأعضاء النقابة</p>
+                <h2>بوابة الخدمات الرقمية</h2>
+                <p>اختر الخدمة المطلوبة من القائمة أدناه للبدء في تنفيذ طلبك إلكترونياً</p>
             </div>
-            <div class="sm-content-container">
-                <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 25px; margin-top: 50px;">
-                    <?php if (empty($services)): ?>
-                        <div style="grid-column: 1/-1; text-align: center; padding: 50px; color: #94a3b8;">لا توجد خدمات متاحة حالياً.</div>
-                    <?php else: ?>
-                        <?php foreach ($services as $s): ?>
-                            <div class="sm-service-card" style="background: #fff; border: 1px solid var(--sm-border-color); border-radius: 20px; padding: 30px; display: flex; flex-direction: column; transition: 0.3s; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);">
-                                <div style="width: 60px; height: 60px; background: var(--sm-primary-color); border-radius: 15px; display: flex; align-items: center; justify-content: center; color: #fff; margin-bottom: 25px;">
-                                    <span class="dashicons dashicons-cloud" style="font-size: 30px; width: 30px; height: 30px;"></span>
-                                </div>
-                                <h3 style="margin: 0 0 15px 0; font-weight: 800; color: var(--sm-dark-color); font-size: 1.4em;"><?php echo esc_html($s->name); ?></h3>
-                                <p style="font-size: 14px; color: #64748b; line-height: 1.8; margin-bottom: 25px; flex: 1;"><?php echo esc_html($s->description); ?></p>
 
-                                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: auto; padding-top: 20px; border-top: 1px solid #f1f5f9;">
-                                    <div style="font-weight: 800; color: var(--sm-primary-color); font-size: 1.1em;"><?php echo $s->fees > 0 ? number_format($s->fees, 2) . ' ج.م' : 'خدمة مجانية'; ?></div>
-                                    <?php if ($is_logged_in): ?>
-                                        <a href="<?php echo add_query_arg('sm_tab', 'digital-services', home_url('/sm-admin')); ?>" class="sm-btn" style="width: auto; padding: 10px 25px; border-radius: 10px;">طلب الخدمة</a>
-                                    <?php else: ?>
-                                        <button onclick="window.location.href='<?php echo $login_url; ?>'" class="sm-btn" style="width: auto; padding: 10px 25px; border-radius: 10px;">تسجيل الدخول للطلب</button>
-                                    <?php endif; ?>
-                                </div>
-                            </div>
+            <div class="sm-services-layout" style="display: flex; gap: 30px; margin-top: 40px; align-items: flex-start;">
+                <!-- Right Sidebar: Categories -->
+                <div class="sm-services-sidebar" style="width: 260px; flex-shrink: 0; background: #fff; border: 1px solid var(--sm-border-color); border-radius: 20px; padding: 25px; position: sticky; top: 20px;">
+                    <h4 style="margin: 0 0 20px 0; font-weight: 800; color: var(--sm-dark-color); display: flex; align-items: center; gap: 10px;">
+                        <span class="dashicons dashicons-filter" style="font-size: 18px; width: 18px; height: 18px;"></span> تصنيفات الخدمات
+                    </h4>
+                    <div class="sm-category-list" style="display: flex; flex-direction: column; gap: 8px;">
+                        <?php foreach ($categories as $cat): ?>
+                            <button class="sm-category-btn <?php echo $cat === 'الكل' ? 'active' : ''; ?>"
+                                    data-category="<?php echo esc_attr($cat); ?>"
+                                    style="text-align: right; padding: 12px 20px; border: 1px solid transparent; border-radius: 12px; background: transparent; color: #64748b; font-weight: 600; cursor: pointer; transition: 0.3s; font-family: 'Rubik', sans-serif;">
+                                <?php echo esc_html($cat); ?>
+                            </button>
                         <?php endforeach; ?>
-                    <?php endif; ?>
+                    </div>
+                </div>
+
+                <!-- Left Content: Service Grid -->
+                <div class="sm-services-grid-wrapper" style="flex: 1;">
+                    <div id="sm-services-grid" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 25px;">
+                        <?php if (empty($services)): ?>
+                            <div style="grid-column: 1/-1; text-align: center; padding: 60px; color: #94a3b8; background: #fff; border-radius: 20px; border: 1px dashed #cbd5e0;">
+                                <span class="dashicons dashicons-warning" style="font-size: 40px; width: 40px; height: 40px; margin-bottom: 15px; opacity: 0.5;"></span>
+                                <p>لا توجد خدمات متاحة في هذا التصنيف حالياً.</p>
+                            </div>
+                        <?php else: ?>
+                            <?php foreach ($services as $s):
+                                $s_cat = $s->category ?: 'عام';
+                            ?>
+                                <div class="sm-service-card-modern" data-category="<?php echo esc_attr($s_cat); ?>"
+                                     style="background: #fff; border: 1px solid var(--sm-border-color); border-radius: 24px; padding: 35px; display: flex; flex-direction: column; transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);">
+                                    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 25px;">
+                                        <div class="sm-service-icon" style="width: 65px; height: 65px; background: linear-gradient(135deg, var(--sm-primary-color), var(--sm-secondary-color)); border-radius: 18px; display: flex; align-items: center; justify-content: center; color: #fff; box-shadow: 0 10px 15px -3px rgba(246, 48, 73, 0.3);">
+                                            <span class="dashicons dashicons-cloud" style="font-size: 32px; width: 32px; height: 32px;"></span>
+                                        </div>
+                                        <div style="text-align: left;">
+                                            <span style="display: inline-block; padding: 5px 12px; background: #f0f4f8; color: #4a5568; border-radius: 10px; font-size: 11px; font-weight: 700;">
+                                                <?php echo esc_html($s_cat); ?>
+                                            </span>
+                                        </div>
+                                    </div>
+
+                                    <h3 style="margin: 0 0 12px 0; font-weight: 800; color: var(--sm-dark-color); font-size: 1.5em; line-height: 1.3;"><?php echo esc_html($s->name); ?></h3>
+                                    <p style="font-size: 14px; color: #64748b; line-height: 1.8; margin-bottom: 30px; flex: 1;"><?php echo esc_html($s->description); ?></p>
+
+                                    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: auto; padding-top: 25px; border-top: 1px solid #f1f5f9;">
+                                        <div style="display: flex; flex-direction: column;">
+                                            <span style="font-size: 11px; color: #94a3b8; font-weight: 600;">رسوم الخدمة</span>
+                                            <span style="font-weight: 900; color: var(--sm-primary-color); font-size: 1.3em;">
+                                                <?php echo $s->fees > 0 ? number_format($s->fees, 2) . ' <span style="font-size: 0.6em;">ج.م</span>' : 'خدمة مجانية'; ?>
+                                            </span>
+                                        </div>
+                                        <?php if ($is_logged_in): ?>
+                                            <a href="<?php echo add_query_arg('sm_tab', 'digital-services', home_url('/sm-admin')); ?>" class="sm-btn-sleek"
+                                               style="background: var(--sm-dark-color); color: #fff; padding: 12px 25px; border-radius: 15px; text-decoration: none; font-weight: 700; font-size: 14px; transition: 0.3s;">طلب الآن</a>
+                                        <?php else: ?>
+                                            <button onclick="window.location.href='<?php echo $login_url; ?>'" class="sm-btn-sleek"
+                                                    style="background: #f1f5f9; color: #475569; padding: 12px 25px; border: none; border-radius: 15px; font-weight: 700; font-size: 14px; cursor: pointer; transition: 0.3s;">دخول للطلب</button>
+                                        <?php endif; ?>
+                                    </div>
+                                </div>
+                            <?php endforeach; ?>
+                        <?php endif; ?>
+                    </div>
                 </div>
             </div>
         </div>
+
+        <style>
+            .sm-category-btn:hover { background: #f8fafc; color: var(--sm-primary-color); }
+            .sm-category-btn.active { background: var(--sm-primary-color); color: #fff !important; box-shadow: 0 4px 6px -1px rgba(246, 48, 73, 0.2); }
+
+            .sm-service-card-modern:hover { transform: translateY(-8px); box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04); border-color: var(--sm-primary-color); }
+            .sm-btn-sleek:hover { opacity: 0.9; transform: scale(1.05); }
+
+            @media (max-width: 992px) {
+                .sm-services-layout { flex-direction: column; }
+                .sm-services-sidebar { width: 100%; position: static; }
+                .sm-category-list { flex-direction: row; overflow-x: auto; padding-bottom: 10px; }
+                .sm-category-btn { white-space: nowrap; }
+                #sm-services-grid { grid-template-columns: 1fr; }
+            }
+        </style>
+
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                const categoryButtons = document.querySelectorAll('.sm-category-btn');
+                const serviceCards = document.querySelectorAll('.sm-service-card-modern');
+
+                categoryButtons.forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        const selectedCat = this.getAttribute('data-category');
+
+                        // Update active state
+                        categoryButtons.forEach(b => b.classList.remove('active'));
+                        this.classList.add('active');
+
+                        // Filter cards
+                        serviceCards.forEach(card => {
+                            if (selectedCat === 'الكل' || card.getAttribute('data-category') === selectedCat) {
+                                card.style.display = 'flex';
+                                // Simple animation
+                                card.style.opacity = '0';
+                                setTimeout(() => {
+                                    card.style.opacity = '1';
+                                    card.style.transition = 'opacity 0.4s ease';
+                                }, 50);
+                            } else {
+                                card.style.display = 'none';
+                            }
+                        });
+                    });
+                });
+            });
+        </script>
         <?php
         return ob_get_clean();
     }
@@ -1282,6 +1377,7 @@ class SM_Public {
 
         $data = [
             'name' => sanitize_text_field($_POST['name']),
+            'category' => sanitize_text_field($_POST['category'] ?? 'عام'),
             'description' => sanitize_textarea_field($_POST['description']),
             'fees' => floatval($_POST['fees'] ?? 0),
             'status' => in_array($_POST['status'], ['active', 'suspended']) ? $_POST['status'] : 'active',
@@ -1304,6 +1400,7 @@ class SM_Public {
             if (empty($_POST['name'])) wp_send_json_error('اسم الخدمة مطلوب');
             $data['name'] = sanitize_text_field($_POST['name']);
         }
+        if (isset($_POST['category'])) $data['category'] = sanitize_text_field($_POST['category']);
         if (isset($_POST['description'])) $data['description'] = sanitize_textarea_field($_POST['description']);
         if (isset($_POST['fees'])) {
             if (!is_numeric($_POST['fees'])) wp_send_json_error('الرسوم يجب أن تكون رقماً');
