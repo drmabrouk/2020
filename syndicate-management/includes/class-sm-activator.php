@@ -8,7 +8,7 @@ class SM_Activator {
         $installed_ver = get_option('sm_db_version');
 
         // Migration: Rename old tables if they exist
-        if (version_compare($installed_ver, '97.2.2', '<')) {
+        if (version_compare($installed_ver, '97.2.3', '<')) {
             self::migrate_tables();
             self::migrate_settings();
             self::fix_services_schema();
@@ -166,7 +166,9 @@ class SM_Activator {
             id mediumint(9) NOT NULL AUTO_INCREMENT,
             name tinytext NOT NULL,
             category varchar(100) DEFAULT 'عام',
+            icon varchar(50) DEFAULT 'dashicons-cloud',
             requires_login tinyint(1) DEFAULT 1,
+            is_deleted tinyint(1) DEFAULT 0,
             description text,
             fees decimal(10,2) DEFAULT 0,
             required_fields text,
@@ -776,6 +778,16 @@ class SM_Activator {
         $login_col = $wpdb->get_results($wpdb->prepare("SHOW COLUMNS FROM $table_name LIKE %s", 'requires_login'));
         if (empty($login_col)) {
             $wpdb->query("ALTER TABLE $table_name ADD requires_login tinyint(1) DEFAULT 1 AFTER category");
+        }
+
+        $icon_col = $wpdb->get_results($wpdb->prepare("SHOW COLUMNS FROM $table_name LIKE %s", 'icon'));
+        if (empty($icon_col)) {
+            $wpdb->query("ALTER TABLE $table_name ADD icon varchar(50) DEFAULT 'dashicons-cloud' AFTER category");
+        }
+
+        $deleted_col = $wpdb->get_results($wpdb->prepare("SHOW COLUMNS FROM $table_name LIKE %s", 'is_deleted'));
+        if (empty($deleted_col)) {
+            $wpdb->query("ALTER TABLE $table_name ADD is_deleted tinyint(1) DEFAULT 0 AFTER requires_login");
         }
     }
 

@@ -84,6 +84,7 @@ class Syndicate_Management {
         $this->loader->add_action('wp_ajax_sm_verify_document', $plugin_public, 'ajax_verify_document');
         $this->loader->add_action('wp_ajax_nopriv_sm_verify_document', $plugin_public, 'ajax_verify_document');
         $this->loader->add_action('wp_ajax_sm_delete_service', $plugin_public, 'ajax_delete_service');
+        $this->loader->add_action('wp_ajax_sm_restore_service', $plugin_public, 'ajax_restore_service');
         $this->loader->add_action('wp_ajax_sm_submit_service_request', $plugin_public, 'ajax_submit_service_request');
         $this->loader->add_action('wp_ajax_sm_process_service_request', $plugin_public, 'ajax_process_service_request');
         $this->loader->add_action('wp_ajax_sm_get_member_finance_html', $plugin_public, 'ajax_get_member_finance_html');
@@ -102,6 +103,7 @@ class Syndicate_Management {
         $this->loader->add_action('wp_ajax_sm_track_membership_request', $plugin_public, 'ajax_track_membership_request');
         $this->loader->add_action('wp_ajax_nopriv_sm_track_service_request', $plugin_public, 'ajax_track_service_request');
         $this->loader->add_action('wp_ajax_sm_track_service_request', $plugin_public, 'ajax_track_service_request');
+        $this->loader->add_action('wp_ajax_nopriv_sm_submit_service_request', $plugin_public, 'ajax_submit_service_request');
         $this->loader->add_action('wp_ajax_nopriv_sm_submit_membership_request_stage3', $plugin_public, 'ajax_submit_membership_request_stage3');
         $this->loader->add_action('wp_ajax_sm_submit_membership_request_stage3', $plugin_public, 'ajax_submit_membership_request_stage3');
         $this->loader->add_action('wp_ajax_sm_process_membership_request', $plugin_public, 'ajax_process_membership_request');
@@ -121,8 +123,6 @@ class Syndicate_Management {
         $this->loader->add_action('wp_ajax_sm_save_pub_identity', $plugin_public, 'ajax_save_pub_identity');
         $this->loader->add_action('wp_ajax_sm_save_pub_template', $plugin_public, 'ajax_save_pub_template');
         $this->loader->add_action('wp_ajax_sm_save_page_settings', $plugin_public, 'ajax_save_page_settings');
-        $this->loader->add_action('wp_ajax_sm_add_article', $plugin_public, 'ajax_add_article');
-        $this->loader->add_action('wp_ajax_sm_delete_article', $plugin_public, 'ajax_delete_article');
         $this->loader->add_action('wp_ajax_sm_save_alert', $plugin_public, 'ajax_save_alert');
         $this->loader->add_action('wp_ajax_sm_delete_alert', $plugin_public, 'ajax_delete_alert');
         $this->loader->add_action('wp_ajax_sm_acknowledge_alert', $plugin_public, 'ajax_acknowledge_alert');

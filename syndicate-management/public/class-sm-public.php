@@ -188,19 +188,19 @@ class SM_Public {
         ob_start();
         ?>
         <div class="sm-public-page" dir="rtl">
-            <!-- Order Tracking Header -->
-            <div class="sm-tracking-search-box" style="background: linear-gradient(135deg, var(--sm-dark-color), #2d3748); border-radius: 24px; padding: 40px; margin-bottom: 50px; color: #fff; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);">
+            <!-- Order Tracking Header (Light Refined UI) -->
+            <div class="sm-tracking-search-box" style="background: #fff; border: 1px solid #e2e8f0; border-radius: 24px; padding: 40px; margin-bottom: 50px; color: var(--sm-dark-color); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05);">
                 <div style="text-align: center; margin-bottom: 30px;">
-                    <h2 style="margin: 0; font-weight: 900; font-size: 2em; letter-spacing: -1px;">متابعة حالة الطلبات</h2>
-                    <p style="margin: 10px 0 0 0; opacity: 0.8; font-size: 14px;">أدخل كود التتبع الخاص بطلبك للاستعلام عن حالته الحالية</p>
+                    <h2 style="margin: 0; font-weight: 900; font-size: 2.2em; letter-spacing: -1px; color: var(--sm-dark-color);">متابعة حالة الطلبات</h2>
+                    <p style="margin: 10px 0 0 0; color: #64748b; font-size: 15px; font-weight: 500;">أدخل كود التتبع الخاص بطلبك للاستعلام عن حالته الحالية</p>
                 </div>
-                <div style="display: flex; gap: 15px; max-width: 600px; margin: 0 auto;">
-                    <input type="text" id="sm_service_tracking_input" placeholder="أدخل كود الطلب (مثال: SR-12345)"
-                           style="flex: 1; padding: 15px 25px; border-radius: 15px; border: 2px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.05); color: #fff; font-family: 'Rubik', sans-serif; font-size: 16px; outline: none; transition: 0.3s;">
+                <div style="display: flex; gap: 15px; max-width: 650px; margin: 0 auto; background: #f8fafc; padding: 10px; border-radius: 20px; border: 1px solid #f1f5f9;">
+                    <input type="text" id="sm_service_tracking_input" placeholder="أدخل كود الطلب (مثال: <?php echo date('Ymd'); ?>123)"
+                           style="flex: 1; padding: 15px 25px; border-radius: 15px; border: 1px solid #e2e8f0; background: #fff; color: var(--sm-dark-color); font-family: 'Rubik', sans-serif; font-size: 16px; outline: none; transition: 0.3s; box-shadow: inset 0 2px 4px 0 rgba(0,0,0,0.02);">
                     <button onclick="smTrackServiceRequest()"
-                            style="background: var(--sm-primary-color); color: #fff; border: none; padding: 0 35px; border-radius: 15px; font-weight: 800; font-size: 15px; cursor: pointer; transition: 0.3s; font-family: 'Rubik', sans-serif;">بحث وتتبع</button>
+                            style="background: var(--sm-primary-color); color: #fff; border: none; padding: 0 40px; border-radius: 15px; font-weight: 800; font-size: 16px; cursor: pointer; transition: 0.3s; font-family: 'Rubik', sans-serif; box-shadow: 0 4px 6px -1px rgba(246, 48, 73, 0.2);">بحث وتتبع</button>
                 </div>
-                <div id="sm-tracking-results-area" style="margin-top: 30px; display: none; background: rgba(255,255,255,0.05); border-radius: 18px; padding: 25px; border: 1px solid rgba(255,255,255,0.1); animation: smFadeIn 0.4s ease;"></div>
+                <div id="sm-tracking-results-area" style="margin-top: 35px; display: none; background: #f8fafc; border-radius: 20px; padding: 30px; border: 1px solid #e2e8f0; animation: smFadeIn 0.4s ease;"></div>
             </div>
 
             <div class="sm-services-layout" style="display: flex; gap: 30px; margin-top: 40px; align-items: flex-start;">
@@ -222,7 +222,7 @@ class SM_Public {
 
                 <!-- Left Content: Service Grid -->
                 <div class="sm-services-grid-wrapper" style="flex: 1;">
-                    <div id="sm-services-grid" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 25px;">
+                    <div id="sm-services-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 25px;">
                         <?php if (empty($services)): ?>
                             <div style="grid-column: 1/-1; text-align: center; padding: 60px; color: #94a3b8; background: #fff; border-radius: 20px; border: 1px dashed #cbd5e0;">
                                 <span class="dashicons dashicons-warning" style="font-size: 40px; width: 40px; height: 40px; margin-bottom: 15px; opacity: 0.5;"></span>
@@ -236,7 +236,7 @@ class SM_Public {
                                      style="background: #fff; border: 1px solid var(--sm-border-color); border-radius: 24px; padding: 35px; display: flex; flex-direction: column; transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);">
                                     <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 25px;">
                                         <div class="sm-service-icon" style="width: 65px; height: 65px; background: linear-gradient(135deg, var(--sm-primary-color), var(--sm-secondary-color)); border-radius: 18px; display: flex; align-items: center; justify-content: center; color: #fff; box-shadow: 0 10px 15px -3px rgba(246, 48, 73, 0.3);">
-                                            <span class="dashicons dashicons-cloud" style="font-size: 32px; width: 32px; height: 32px;"></span>
+                                            <span class="dashicons <?php echo esc_attr($s->icon ?: 'dashicons-cloud'); ?>" style="font-size: 32px; width: 32px; height: 32px;"></span>
                                         </div>
                                         <div style="text-align: left;">
                                             <span style="display: inline-block; padding: 5px 12px; background: #f0f4f8; color: #4a5568; border-radius: 10px; font-size: 11px; font-weight: 700;">
@@ -317,17 +317,17 @@ class SM_Public {
                     if(res.success) {
                         const r = res.data;
                         area.innerHTML = `
-                            <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:20px;">
-                                <div><span class="sm-tracking-label" style="color:rgba(255,255,255,0.6);">الخدمة:</span><span class="sm-tracking-value">${r.service}</span></div>
-                                <div><span class="sm-tracking-label" style="color:rgba(255,255,255,0.6);">تاريخ الطلب:</span><span class="sm-tracking-value">${r.date}</span></div>
-                                <div><span class="sm-tracking-label" style="color:rgba(255,255,255,0.6);">حالة الطلب:</span><span style="color:#f6ad55; font-weight:800;">${r.status}</span></div>
-                                <div style="grid-column: span 3; border-top: 1px solid rgba(255,255,255,0.1); padding-top:15px;">
-                                    <span class="sm-tracking-label" style="color:rgba(255,255,255,0.6);">صاحب الطلب:</span><span class="sm-tracking-value">${r.member}</span>
+                            <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:25px;">
+                                <div><span class="sm-tracking-label" style="color:#64748b;">الخدمة:</span><span class="sm-tracking-value" style="color:var(--sm-dark-color);">${r.service}</span></div>
+                                <div><span class="sm-tracking-label" style="color:#64748b;">تاريخ الطلب:</span><span class="sm-tracking-value" style="color:var(--sm-dark-color);">${r.date}</span></div>
+                                <div><span class="sm-tracking-label" style="color:#64748b;">حالة الطلب:</span><span style="color:var(--sm-primary-color); font-weight:900; font-size:16px;">${r.status}</span></div>
+                                <div style="grid-column: span 3; border-top: 1px solid #e2e8f0; padding-top:20px; margin-top:5px;">
+                                    <span class="sm-tracking-label" style="color:#64748b;">مقدم الطلب:</span><span class="sm-tracking-value" style="color:var(--sm-dark-color);">${r.member}</span>
                                 </div>
                             </div>
                         `;
                     } else {
-                        area.innerHTML = `<div style="text-align:center; color:#feb2b2;">${res.data}</div>`;
+                        area.innerHTML = `<div style="text-align:center; color:#e53e3e; font-weight:700;">${res.data}</div>`;
                     }
                 });
             };
@@ -399,7 +399,7 @@ class SM_Public {
                                     <div style="font-size:60px; margin-bottom:20px;">✅</div>
                                     <h3 style="font-weight:900; font-size:1.8em; margin:0 0 10px 0;">تم تقديم طلبك بنجاح!</h3>
                                     <p style="color:#64748b; line-height:1.6; margin-bottom:20px;">يرجى الاحتفاظ بكود التتبع التالي للاستعلام عن حالة طلبك لاحقاً:</p>
-                                    <div style="background:#f8fafc; border:2px dashed var(--sm-primary-color); padding:15px; font-size:24px; font-weight:900; color:var(--sm-primary-color); border-radius:15px; margin-bottom:30px;">SR-${res.data}</div>
+                                    <div style="background:#f8fafc; border:2px dashed var(--sm-primary-color); padding:15px; font-size:24px; font-weight:900; color:var(--sm-primary-color); border-radius:15px; margin-bottom:30px;">${res.data}</div>
                                     <button onclick="location.reload()" class="sm-btn" style="width:100%;">إغلاق</button>
                                 </div>
                             `;
@@ -1513,6 +1513,7 @@ class SM_Public {
         $data = [
             'name' => sanitize_text_field($_POST['name']),
             'category' => sanitize_text_field($_POST['category'] ?? 'عام'),
+            'icon' => sanitize_text_field($_POST['icon'] ?? 'dashicons-cloud'),
             'requires_login' => isset($_POST['requires_login']) ? (int)$_POST['requires_login'] : 1,
             'description' => sanitize_textarea_field($_POST['description']),
             'fees' => floatval($_POST['fees'] ?? 0),
@@ -1543,6 +1544,7 @@ class SM_Public {
             $data['name'] = sanitize_text_field($_POST['name']);
         }
         if (isset($_POST['category'])) $data['category'] = sanitize_text_field($_POST['category']);
+        if (isset($_POST['icon'])) $data['icon'] = sanitize_text_field($_POST['icon']);
         if (isset($_POST['requires_login'])) $data['requires_login'] = (int)$_POST['requires_login'];
         if (isset($_POST['description'])) $data['description'] = sanitize_textarea_field($_POST['description']);
         if (isset($_POST['fees'])) {
@@ -1670,21 +1672,40 @@ class SM_Public {
     public function ajax_delete_service() {
         if (!current_user_can('sm_manage_system')) wp_send_json_error('Unauthorized');
         check_ajax_referer('sm_admin_action', 'nonce');
-        if (SM_DB::delete_service(intval($_POST['id']))) wp_send_json_success();
+        $permanent = !empty($_POST['permanent']);
+        if (SM_DB::delete_service(intval($_POST['id']), $permanent)) wp_send_json_success();
         else wp_send_json_error('Failed to delete service');
     }
 
-    public function ajax_submit_service_request() {
-        if (!is_user_logged_in()) wp_send_json_error('Unauthorized');
-        check_ajax_referer('sm_service_action', 'nonce');
+    public function ajax_restore_service() {
+        if (!current_user_can('sm_manage_system')) wp_send_json_error('Unauthorized');
+        check_ajax_referer('sm_admin_action', 'nonce');
+        if (SM_DB::restore_service(intval($_POST['id']))) wp_send_json_success();
+        else wp_send_json_error('Failed to restore service');
+    }
 
-        $member_id = intval($_POST['member_id']);
-        if (!$this->can_access_member($member_id)) wp_send_json_error('Access denied');
+    public function ajax_submit_service_request() {
+        // check_ajax_referer('sm_service_action', 'nonce'); // Allow guest requests
+
+        $service_id = intval($_POST['service_id']);
+        global $wpdb;
+        $service = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}sm_services WHERE id = %d", $service_id));
+
+        if (!$service) wp_send_json_error('Service not found');
+
+        $member_id = intval($_POST['member_id'] ?? 0);
+        if ($service->requires_login) {
+            if (!is_user_logged_in()) wp_send_json_error('هذه الخدمة تتطلب تسجيل الدخول');
+            if (!$this->can_access_member($member_id)) wp_send_json_error('Access denied');
+        }
 
         $res = SM_DB::submit_service_request($_POST);
         if ($res) {
-            SM_Logger::log('طلب خدمة رقمية', "العضو ID: $member_id طلب خدمة ID: {$_POST['service_id']}");
-            wp_send_json_success($res);
+            SM_Logger::log('طلب خدمة رقمية', "العضو ID: $member_id طلب خدمة ID: $service_id");
+
+            // Format tracking code: YYYYMMDD{ID}
+            $tracking_code = date('Ymd') . $res;
+            wp_send_json_success($tracking_code);
         } else wp_send_json_error('Failed to submit request');
     }
 
@@ -2838,7 +2859,13 @@ class SM_Public {
         $code = sanitize_text_field($_POST['tracking_code'] ?? '');
         if (empty($code)) wp_send_json_error('يرجى إدخال كود التتبع');
 
-        $id = str_replace('SR-', '', $code);
+        // New format: YYYYMMDD{ID}. Extract ID from the end (all chars after index 8)
+        $id = substr($code, 8);
+        if (empty($id) || !is_numeric($id)) {
+            // Fallback for old SR- format
+            $id = str_replace('SR-', '', $code);
+        }
+
         if (!is_numeric($id)) wp_send_json_error('كود تتبع غير صحيح');
 
         global $wpdb;
