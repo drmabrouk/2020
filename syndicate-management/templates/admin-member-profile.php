@@ -127,6 +127,7 @@ $acc_status = SM_Finance::get_member_status($member->id);
 
                 <h4 style="margin: 20px 0 10px 0; color: var(--sm-primary-color);">بيانات السكن والاتصال</h4>
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                    <div><label class="sm-label">محافظة الميلاد:</label> <div class="sm-value"><?php echo esc_html($member->province_of_birth ?: '---'); ?></div></div>
                     <div><label class="sm-label">محافظة السكن:</label> <div class="sm-value"><?php echo esc_html($govs[$member->residence_governorate] ?? $member->residence_governorate); ?></div></div>
                     <div><label class="sm-label">المدينة / المركز:</label> <div class="sm-value"><?php echo esc_html($member->residence_city); ?></div></div>
                     <div style="grid-column: span 2;"><label class="sm-label">العنوان (الشارع / القرية):</label> <div class="sm-value"><?php echo esc_html($member->residence_street); ?></div></div>

@@ -55,6 +55,7 @@ class SM_Activator {
             alt_phone tinytext,
             notes text,
             photo_url text,
+            province_of_birth tinytext,
             wp_user_id bigint(20),
             officer_id bigint(20),
             registration_date date,
@@ -728,6 +729,16 @@ class SM_Activator {
                 }
                 $wpdb->update("{$wpdb->prefix}sm_members", ['wp_user_id' => $user_id], ['id' => $m->id]);
             }
+        }
+    }
+
+    private static function fix_members_schema() {
+        global $wpdb;
+        $table_name = $wpdb->prefix . 'sm_members';
+
+        $birth_col = $wpdb->get_results($wpdb->prepare("SHOW COLUMNS FROM $table_name LIKE %s", 'province_of_birth'));
+        if (empty($birth_col)) {
+            $wpdb->query("ALTER TABLE $table_name ADD province_of_birth tinytext AFTER governorate");
         }
     }
 

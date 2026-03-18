@@ -275,7 +275,7 @@ class SM_Settings {
     }
 
     public static function get_governorates() {
-        return array(
+        $default = array(
             'cairo' => 'القاهرة',
             'giza' => 'الجيزة',
             'alexandria' => 'الإسكندرية',
@@ -304,6 +304,7 @@ class SM_Settings {
             'south_sinai' => 'جنوب سيناء',
             'beni_suef' => 'بني سويف'
         );
+        return get_option('sm_branches', $default);
     }
 
     public static function get_governorate_prefix($gov_key) {

@@ -1116,8 +1116,13 @@ class SM_Public {
         update_user_meta($user_id, 'sm_account_status', 'active');
 
         $gov = sanitize_text_field($_POST['governorate'] ?? '');
-        if (in_array('sm_syndicate_admin', (array)wp_get_current_user()->roles)) {
-            $gov = get_user_meta(get_current_user_id(), 'sm_governorate', true);
+        if (in_array('sm_syndicate_admin', (array)wp_get_current_user()->roles) || in_array('sm_syndicate_member', (array)wp_get_current_user()->roles)) {
+            if ($role !== 'sm_system_admin') {
+                $gov = get_user_meta(get_current_user_id(), 'sm_governorate', true);
+            }
+        }
+        if (empty($gov) && $role !== 'sm_system_admin' && $role !== 'administrator') {
+             wp_send_json_error('يجب تعيين فرع النقابة للمسؤول');
         }
         update_user_meta($user_id, 'sm_governorate', $gov);
 
@@ -1181,13 +1186,15 @@ class SM_Public {
         update_user_meta($user_id, 'sm_phone', sanitize_text_field($_POST['phone']));
 
         $gov = sanitize_text_field($_POST['governorate'] ?? '');
-        if (!in_array('sm_syndicate_admin', (array)wp_get_current_user()->roles)) {
-            if (isset($_POST['governorate'])) {
-                update_user_meta($user_id, 'sm_governorate', $gov);
+        if (in_array('sm_syndicate_admin', (array)wp_get_current_user()->roles) || in_array('sm_syndicate_member', (array)wp_get_current_user()->roles)) {
+            if ($role !== 'sm_system_admin') {
+                $gov = get_user_meta(get_current_user_id(), 'sm_governorate', true);
             }
-        } else {
-            $gov = get_user_meta($user_id, 'sm_governorate', true);
         }
+        if (empty($gov) && $role !== 'sm_system_admin' && $role !== 'administrator') {
+             wp_send_json_error('يجب تعيين فرع النقابة للمسؤول');
+        }
+        update_user_meta($user_id, 'sm_governorate', $gov);
 
         update_user_meta($user_id, 'sm_account_status', sanitize_text_field($_POST['account_status']));
 
@@ -1912,6 +1919,29 @@ class SM_Public {
             SM_Settings::save_labels($labels);
 
             wp_redirect(add_query_arg(['sm_tab' => 'global-settings', 'sub' => 'init', 'settings_saved' => 1], wp_get_referer()));
+            exit;
+        }
+
+        if (isset($_POST['sm_save_branches_list'])) {
+            check_admin_referer('sm_admin_action', 'sm_admin_nonce');
+            $lines = explode("\n", str_replace("\r", "", $_POST['sm_branches_list']));
+            $branches = array();
+            foreach ($lines as $line) {
+                $parts = explode("|", $line);
+                if (count($parts) == 2) {
+                    $branches[trim($parts[0])] = trim($parts[1]);
+                }
+            }
+            if (!empty($branches)) update_option('sm_branches', $branches);
+            wp_redirect(add_query_arg(['sm_tab' => 'advanced-settings', 'sub' => 'branches', 'settings_saved' => 1], wp_get_referer()));
+            exit;
+        }
+
+        if (isset($_POST['sm_save_email_settings'])) {
+            check_admin_referer('sm_admin_action', 'sm_admin_nonce');
+            update_option('sm_support_email', sanitize_email($_POST['sm_support_email']));
+            update_option('sm_noreply_email', sanitize_email($_POST['sm_noreply_email']));
+            wp_redirect(add_query_arg(['sm_tab' => 'advanced-settings', 'sub' => 'emails', 'settings_saved' => 1], wp_get_referer()));
             exit;
         }
 

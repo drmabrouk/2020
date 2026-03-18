@@ -59,7 +59,8 @@ class SM_Notifications {
         $html_message = self::wrap_in_template($subject, $body, $email_settings, $syndicate);
 
         // Professional Sender info
-        add_filter('wp_mail_from', function() { return 'no-reply@irseg.org'; });
+        $from_email = get_option('sm_noreply_email', 'noreply@irseg.org');
+        add_filter('wp_mail_from', function() use ($from_email) { return $from_email; });
         add_filter('wp_mail_from_name', function() use ($syndicate) { return $syndicate['syndicate_name']; });
 
         $headers = array('Content-Type: text/html; charset=UTF-8');
