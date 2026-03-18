@@ -122,9 +122,9 @@ class SM_Public {
         add_shortcode('sm_login', array($this, 'shortcode_login'));
         add_shortcode('sm_admin', array($this, 'shortcode_admin_dashboard'));
         add_shortcode('verify', array($this, 'shortcode_verify'));
+        add_shortcode('login-page', array($this, 'shortcode_login_page'));
 
         // Page Customization Shortcodes
-        add_shortcode('smcontact', array($this, 'shortcode_contact'));
         add_shortcode('services', array($this, 'shortcode_services'));
 
         add_filter('authenticate', array($this, 'custom_authenticate'), 20, 3);
@@ -443,39 +443,6 @@ class SM_Public {
                 });
             });
         </script>
-        <?php
-        return ob_get_clean();
-    }
-
-
-    public function shortcode_contact() {
-        $syndicate = SM_Settings::get_syndicate_info();
-        $page = SM_DB::get_page_by_shortcode('smcontact');
-        ob_start();
-        ?>
-        <div class="sm-public-page sm-contact-page" dir="rtl">
-            <div class="sm-page-header">
-                <h2><?php echo esc_html($page->title ?? 'اتصل بنا'); ?></h2>
-            </div>
-            <div class="sm-content-container">
-                <div class="sm-contact-grid">
-                    <div class="sm-contact-info">
-                        <h3>بيانات التواصل</h3>
-                        <p><span class="dashicons dashicons-location"></span> <?php echo esc_html($syndicate['address']); ?></p>
-                        <p><span class="dashicons dashicons-phone"></span> <?php echo esc_html($syndicate['phone']); ?></p>
-                        <p><span class="dashicons dashicons-email"></span> <?php echo esc_html($syndicate['email']); ?></p>
-                    </div>
-                    <div class="sm-contact-form-wrapper">
-                        <form class="sm-public-form">
-                            <div class="sm-form-group"><input type="text" placeholder="الاسم الكامل" class="sm-input"></div>
-                            <div class="sm-form-group"><input type="email" placeholder="البريد الإلكتروني" class="sm-input"></div>
-                            <div class="sm-form-group"><textarea placeholder="رسالتك" class="sm-textarea" rows="5"></textarea></div>
-                            <button type="button" class="sm-btn" onclick="alert('شكراً لتواصلك معنا، تم استلام رسالتك.')">إرسال الرسالة</button>
-                        </form>
-                    </div>
-                </div>
-            </div>
-        </div>
         <?php
         return ob_get_clean();
     }
@@ -899,6 +866,128 @@ class SM_Public {
         $output .= '</div>'; // End box
         $output .= '</div>'; // End container
         return $output;
+    }
+
+    public function shortcode_login_page() {
+        if (!is_user_logged_in()) {
+            return '<div class="sm-topbar-login" style="display:flex; align-items:center; gap:8px; font-weight:700;">
+                <span class="dashicons dashicons-lock" style="color:#e53e3e; font-size:20px; width:20px; height:20px;"></span>
+                <a href="' . home_url('/sm-login') . '" style="text-decoration:none; color:inherit;">Register / Login</a>
+            </div>';
+        }
+
+        $user = wp_get_current_user();
+        $greeting = ((int)current_time('G') >= 5 && (int)current_time('G') < 12) ? 'صباح الخير' : 'مساء الخير';
+
+        ob_start();
+        ?>
+        <div class="sm-topbar-user-wrap" style="position:relative; display:inline-block;">
+            <div class="sm-user-dropdown">
+                <div class="sm-user-profile-nav" onclick="smToggleUserDropdown()" style="display: flex; align-items: center; gap: 12px; background: white; padding: 6px 12px; border-radius: 50px; border: 1px solid var(--sm-border-color); cursor: pointer;">
+                    <div style="text-align: right;">
+                        <div style="font-size: 0.85em; font-weight: 700; color: var(--sm-dark-color);"><?php echo $greeting . '، ' . $user->display_name; ?></div>
+                        <div style="font-size: 0.7em; color: #38a169;">متصل الآن <span class="dashicons dashicons-arrow-down-alt2" style="font-size: 10px; width: 10px; height: 10px;"></span></div>
+                    </div>
+                    <?php echo get_avatar($user->ID, 32, '', '', array('style' => 'border-radius: 50%; border: 2px solid var(--sm-primary-color);')); ?>
+                </div>
+
+                <div id="sm-user-dropdown-menu" style="display: none; position: absolute; top: 110%; left: 0; background: white; border: 1px solid var(--sm-border-color); border-radius: 8px; width: 260px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); z-index: 1000; animation: smFadeIn 0.2s ease-out; padding: 10px 0;">
+                    <div id="sm-profile-view">
+                        <div style="padding: 10px 20px; border-bottom: 1px solid #f0f0f0; margin-bottom: 5px;">
+                            <div style="font-weight: 800; color: var(--sm-dark-color);"><?php echo $user->display_name; ?></div>
+                            <div style="font-size: 11px; color: var(--sm-text-gray);"><?php echo $user->user_email; ?></div>
+                        </div>
+                        <?php if (!in_array('sm_member', (array)$user->roles)): ?>
+                            <a href="javascript:smEditProfile()" class="sm-dropdown-item"><span class="dashicons dashicons-edit"></span> تعديل البيانات الشخصية</a>
+                        <?php else: ?>
+                            <a href="javascript:smEditProfile()" class="sm-dropdown-item"><span class="dashicons dashicons-lock"></span> تغيير كلمة المرور</a>
+                        <?php endif; ?>
+
+                        <?php if (current_user_can('manage_options')): ?>
+                            <a href="<?php echo add_query_arg('sm_tab', 'global-settings', home_url('/sm-admin')); ?>" class="sm-dropdown-item"><span class="dashicons dashicons-admin-generic"></span> إعدادات النظام</a>
+                        <?php endif; ?>
+
+                        <a href="javascript:location.reload()" class="sm-dropdown-item"><span class="dashicons dashicons-update"></span> تحديث الصفحة</a>
+                    </div>
+
+                    <div id="sm-profile-edit" style="display: none; padding: 15px;">
+                        <div style="font-weight: 800; margin-bottom: 15px; font-size: 13px; border-bottom: 1px solid #eee; padding-bottom: 10px;">تعديل الملف الشخصي</div>
+                        <div class="sm-form-group" style="margin-bottom: 10px;">
+                            <label class="sm-label" style="font-size: 11px;">الاسم المفضل:</label>
+                            <input type="text" id="sm_edit_display_name" class="sm-input" style="padding: 8px; font-size: 12px;" value="<?php echo esc_attr($user->display_name); ?>" <?php if (in_array('sm_member', (array)$user->roles)) echo 'disabled style="background:#f1f5f9; cursor:not-allowed;"'; ?>>
+                        </div>
+                        <div class="sm-form-group" style="margin-bottom: 10px;">
+                            <label class="sm-label" style="font-size: 11px;">البريد الإلكتروني:</label>
+                            <input type="email" id="sm_edit_user_email" class="sm-input" style="padding: 8px; font-size: 12px;" value="<?php echo esc_attr($user->user_email); ?>" <?php if (in_array('sm_member', (array)$user->roles)) echo 'disabled style="background:#f1f5f9; cursor:not-allowed;"'; ?>>
+                        </div>
+                        <div class="sm-form-group" style="margin-bottom: 15px;">
+                            <label class="sm-label" style="font-size: 11px;">كلمة مرور جديدة (اختياري):</label>
+                            <input type="password" id="sm_edit_user_pass" class="sm-input" style="padding: 8px; font-size: 12px;" placeholder="********">
+                        </div>
+                        <div style="display: flex; gap: 8px;">
+                            <button onclick="smSaveProfile()" class="sm-btn" style="flex: 1; height: 32px; font-size: 11px; padding: 0;">حفظ</button>
+                            <button onclick="document.getElementById('sm-profile-edit').style.display='none'; document.getElementById('sm-profile-view').style.display='block';" class="sm-btn sm-btn-outline" style="flex: 1; height: 32px; font-size: 11px; padding: 0;">إلغاء</button>
+                        </div>
+                    </div>
+
+                    <hr style="margin: 5px 0; border: none; border-top: 1px solid #eee;">
+                    <a href="<?php echo wp_logout_url(home_url('/sm-login')); ?>" class="sm-dropdown-item" style="color: #e53e3e;"><span class="dashicons dashicons-logout"></span> تسجيل الخروج</a>
+                </div>
+            </div>
+        </div>
+        <script>
+        if (typeof smToggleUserDropdown !== 'function') {
+            window.smToggleUserDropdown = function() {
+                const menu = document.getElementById('sm-user-dropdown-menu');
+                if (menu.style.display === 'none') {
+                    menu.style.display = 'block';
+                    document.getElementById('sm-profile-view').style.display = 'block';
+                    document.getElementById('sm-profile-edit').style.display = 'none';
+                } else {
+                    menu.style.display = 'none';
+                }
+            };
+
+            window.smEditProfile = function() {
+                document.getElementById('sm-profile-view').style.display = 'none';
+                document.getElementById('sm-profile-edit').style.display = 'block';
+            };
+
+            window.smSaveProfile = function() {
+                const name = document.getElementById('sm_edit_display_name').value;
+                const email = document.getElementById('sm_edit_user_email').value;
+                const pass = document.getElementById('sm_edit_user_pass').value;
+
+                const formData = new FormData();
+                formData.append('action', 'sm_update_profile_ajax');
+                formData.append('display_name', name);
+                formData.append('user_email', email);
+                formData.append('user_pass', pass);
+                formData.append('nonce', '<?php echo wp_create_nonce("sm_profile_action"); ?>');
+
+                fetch('<?php echo admin_url('admin-ajax.php'); ?>', { method: 'POST', body: formData })
+                .then(r => r.json())
+                .then(res => {
+                    if (res.success) {
+                        alert('تم تحديث الملف الشخصي بنجاح');
+                        location.reload();
+                    } else {
+                        alert('خطأ: ' + res.data);
+                    }
+                });
+            };
+
+            document.addEventListener('click', function(e) {
+                const dropdown = document.querySelector('.sm-user-dropdown');
+                const menu = document.getElementById('sm-user-dropdown-menu');
+                if (dropdown && !dropdown.contains(e.target)) {
+                    if (menu) menu.style.display = 'none';
+                }
+            });
+        }
+        </script>
+        <?php
+        return ob_get_clean();
     }
 
     public function shortcode_admin_dashboard() {
@@ -2559,22 +2648,6 @@ class SM_Public {
         if ($id) wp_send_json_success($id);
         else wp_send_json_error('Failed to save template');
     }
-
-    public function ajax_save_page_settings() {
-        if (!current_user_can('sm_manage_system')) wp_send_json_error('Unauthorized');
-        check_ajax_referer('sm_admin_action', 'nonce');
-
-        $id = intval($_POST['id']);
-        $data = [
-            'title' => sanitize_text_field($_POST['title']),
-            'instructions' => sanitize_textarea_field($_POST['instructions']),
-            'settings' => stripslashes($_POST['settings'] ?? '{}')
-        ];
-
-        if (SM_DB::update_page($id, $data)) wp_send_json_success();
-        else wp_send_json_error('Failed to update page');
-    }
-
 
     public function ajax_save_alert() {
         if (!current_user_can('sm_manage_system')) wp_send_json_error('Unauthorized');

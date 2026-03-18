@@ -1144,26 +1144,6 @@ class SM_DB {
         return $wpdb->update("{$wpdb->prefix}sm_tickets", array('status' => $status), array('id' => $id));
     }
 
-    // Page Customization Methods
-    public static function get_pages() {
-        global $wpdb;
-        return $wpdb->get_results("SELECT * FROM {$wpdb->prefix}sm_pages ORDER BY id ASC");
-    }
-
-    public static function get_page_by_shortcode($shortcode) {
-        global $wpdb;
-        return $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}sm_pages WHERE shortcode = %s", $shortcode));
-    }
-
-    public static function update_page($id, $data) {
-        global $wpdb;
-        return $wpdb->update("{$wpdb->prefix}sm_pages", [
-            'title' => sanitize_text_field($data['title']),
-            'instructions' => sanitize_textarea_field($data['instructions']),
-            'settings' => $data['settings']
-        ], ['id' => intval($id)]);
-    }
-
     // Membership Request Multi-Stage Methods
     public static function add_membership_request($data) {
         global $wpdb;

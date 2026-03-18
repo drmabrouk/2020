@@ -289,25 +289,6 @@
         }
     });
 
-    window.smEditPageSettings = function(page) {
-        document.getElementById('edit-page-id').value = page.id;
-        document.getElementById('page-edit-name').innerText = page.title;
-        document.getElementById('edit-page-title').value = page.title;
-        document.getElementById('edit-page-instructions').value = page.instructions;
-        document.getElementById('sm-edit-page-modal').style.display = 'flex';
-    };
-
-    document.getElementById('sm-edit-page-form')?.addEventListener('submit', function(e) {
-        e.preventDefault();
-        const fd = new FormData(this);
-        fd.append('action', 'sm_save_page_settings');
-        fd.append('nonce', '<?php echo wp_create_nonce("sm_admin_action"); ?>');
-        fetch(ajaxurl, {method: 'POST', body: fd}).then(r=>r.json()).then(res=>{
-            if(res.success) { smShowNotification('تم تحديث الصفحة'); location.reload(); }
-            else alert(res.data);
-        });
-    });
-
     window.smOpenAddAlertModal = function() {
         document.getElementById('sm-alert-form').reset();
         document.getElementById('edit-alert-id').value = '';
@@ -666,7 +647,6 @@ $greeting = ($hour >= 5 && $hour < 12) ? 'صباح الخير' : 'مساء ال�
                             <li><a href="<?php echo add_query_arg('sm_tab', 'global-settings'); ?>&sub=finance" class="<?php echo ($_GET['sub'] ?? '') == 'finance' ? 'sm-sub-active' : ''; ?>"><span class="dashicons dashicons-money-alt"></span> الرسوم والغرامات</a></li>
                             <li><a href="<?php echo add_query_arg('sm_tab', 'global-settings'); ?>&sub=notifications" class="<?php echo ($_GET['sub'] ?? '') == 'notifications' ? 'sm-sub-active' : ''; ?>"><span class="dashicons dashicons-email"></span> التنبيهات والبريد</a></li>
                             <li><a href="<?php echo add_query_arg('sm_tab', 'global-settings'); ?>&sub=design" class="<?php echo ($_GET['sub'] ?? '') == 'design' ? 'sm-sub-active' : ''; ?>"><span class="dashicons dashicons-art"></span> التصميم والمظهر</a></li>
-                            <li><a href="<?php echo add_query_arg('sm_tab', 'global-settings'); ?>&sub=pages" class="<?php echo ($_GET['sub'] ?? '') == 'pages' ? 'sm-sub-active' : ''; ?>"><span class="dashicons dashicons-admin-page"></span> تخصيص الصفحات</a></li>
                         </ul>
                     </li>
                 <?php endif; ?>
@@ -1008,7 +988,6 @@ $greeting = ($hour >= 5 && $hour < 12) ? 'صباح الخير' : 'مساء ال�
                             <button class="sm-tab-btn <?php echo $sub == 'finance' ? 'sm-active' : ''; ?>" onclick="smOpenInternalTab('finance-settings', this)">الرسوم والغرامات</button>
                             <button class="sm-tab-btn <?php echo $sub == 'notifications' ? 'sm-active' : ''; ?>" onclick="smOpenInternalTab('notification-settings', this)">التنبيهات والبريد</button>
                             <button class="sm-tab-btn <?php echo $sub == 'design' ? 'sm-active' : ''; ?>" onclick="smOpenInternalTab('design-settings', this)">التصميم والمظهر</button>
-                            <button class="sm-tab-btn <?php echo $sub == 'pages' ? 'sm-active' : ''; ?>" onclick="smOpenInternalTab('page-customization', this)">تخصيص الصفحات</button>
                         </div>
 
                         <div id="syndicate-settings" class="sm-internal-tab" style="display: <?php echo ($sub == 'init') ? 'block' : 'none'; ?>;">
@@ -1165,38 +1144,6 @@ $greeting = ($hour >= 5 && $hour < 12) ? 'صباح الخير' : 'مساء ال�
                             <?php include SM_PLUGIN_DIR . 'templates/admin-notifications.php'; ?>
                         </div>
 
-                        <div id="page-customization" class="sm-internal-tab" style="display: <?php echo $sub == 'pages' ? 'block' : 'none'; ?>;">
-                            <div style="background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 25px; margin-bottom: 25px;">
-                                <h4 style="margin-top:0; border-bottom:2px solid #f1f5f9; padding-bottom:12px; color: var(--sm-dark-color);">إدارة صفحات النظام والوسوم (Shortcodes)</h4>
-
-                                <div class="sm-table-container">
-                                    <table class="sm-table">
-                                        <thead>
-                                            <tr>
-                                                <th>اسم الصفحة</th>
-                                                <th>الوسم (Shortcode)</th>
-                                                <th>الرابط</th>
-                                                <th>إجراءات</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            <?php foreach(SM_DB::get_pages() as $p): ?>
-                                                <tr>
-                                                    <td><strong><?php echo esc_html($p->title); ?></strong></td>
-                                                    <td><code>[<?php echo $p->shortcode; ?>]</code></td>
-                                                    <td><a href="<?php echo home_url('/' . $p->slug); ?>" target="_blank">معاينة</a></td>
-                                                    <td>
-                                                        <button onclick='smEditPageSettings(<?php echo json_encode($p); ?>)' class="sm-btn sm-btn-outline" style="padding: 5px 10px; font-size: 11px;">تعديل التصميم</button>
-                                                    </td>
-                                                </tr>
-                                            <?php endforeach; ?>
-                                        </tbody>
-                                    </table>
-                                </div>
-
-                            </div>
-                        </div>
-
                         <div id="design-settings" class="sm-internal-tab" style="display: <?php echo $sub == 'design' ? 'block' : 'none'; ?>;">
                             <form method="post">
                                 <?php wp_nonce_field('sm_admin_action', 'sm_admin_nonce'); ?>
@@ -1266,19 +1213,6 @@ $greeting = ($hour >= 5 && $hour < 12) ? 'صباح الخير' : 'مساء ال�
                 </label>
             </div>
             <button type="submit" class="sm-btn" style="width: 100%; margin-top:10px;">حفظ ونشر التنبيه</button>
-        </form>
-    </div>
-</div>
-
-<!-- Page Edit Modal -->
-<div id="sm-edit-page-modal" class="sm-modal-overlay">
-    <div class="sm-modal-content">
-        <div class="sm-modal-header"><h3>تعديل الصفحة: <span id="page-edit-name"></span></h3><button class="sm-modal-close" onclick="document.getElementById('sm-edit-page-modal').style.display='none'">&times;</button></div>
-        <form id="sm-edit-page-form" style="padding: 20px;">
-            <input type="hidden" name="id" id="edit-page-id">
-            <div class="sm-form-group"><label class="sm-label">عنوان الصفحة (يظهر في الهيدر):</label><input type="text" name="title" id="edit-page-title" class="sm-input" required></div>
-            <div class="sm-form-group"><label class="sm-label">معلومات/تعليمات الصفحة:</label><textarea name="instructions" id="edit-page-instructions" class="sm-textarea" rows="4"></textarea></div>
-            <button type="submit" class="sm-btn" style="width: 100%;">حفظ التعديلات</button>
         </form>
     </div>
 </div>
