@@ -353,22 +353,6 @@ class SM_Activator {
             KEY sender_id (sender_id)
         ) $charset_collate;\n";
 
-        // Pages Table
-        $table_name = $wpdb->prefix . 'sm_pages';
-        $sql .= "CREATE TABLE $table_name (
-            id mediumint(9) NOT NULL AUTO_INCREMENT,
-            title varchar(255) NOT NULL,
-            slug varchar(100) NOT NULL,
-            shortcode varchar(50) NOT NULL,
-            instructions text,
-            settings text,
-            created_at datetime DEFAULT CURRENT_TIMESTAMP,
-            updated_at datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-            PRIMARY KEY  (id),
-            UNIQUE KEY slug (slug),
-            UNIQUE KEY shortcode (shortcode)
-        ) $charset_collate;\n";
-
         // Alerts Table
         $table_name = $wpdb->prefix . 'sm_alerts';
         $sql .= "CREATE TABLE $table_name (
@@ -699,11 +683,6 @@ class SM_Activator {
                 'title' => 'لوحة الإدارة النقابية',
                 'content' => '[sm_admin]'
             ),
-            'contact-us' => array(
-                'title' => 'اتصل بنا',
-                'content' => '[smcontact]',
-                'shortcode' => 'smcontact'
-            ),
             'services' => array(
                 'title' => 'الخدمات الرقمية',
                 'content' => '[services]',
@@ -721,21 +700,6 @@ class SM_Activator {
                     'post_type'     => 'page',
                     'post_name'     => $slug
                 ));
-            }
-
-            // Sync with sm_pages table
-            if (isset($data['shortcode'])) {
-                $table = $wpdb->prefix . 'sm_pages';
-                $exists = $wpdb->get_var($wpdb->prepare("SELECT id FROM $table WHERE slug = %s", $slug));
-                if (!$exists) {
-                    $wpdb->insert($table, array(
-                        'title' => $data['title'],
-                        'slug' => $slug,
-                        'shortcode' => $data['shortcode'],
-                        'instructions' => 'تحرير بيانات هذه الصفحة من إعدادات النظام.',
-                        'settings' => json_encode(['layout' => 'standard'])
-                    ));
-                }
             }
         }
     }
